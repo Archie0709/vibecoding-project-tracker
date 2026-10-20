@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { MessageSquareText } from 'lucide-react';
+import { GripVertical, MessageSquareText } from 'lucide-react';
 import { useMembers } from '../hooks/useMembers';
 import { resolveAssignee } from '../lib/assignee';
 import { STAGES } from '../lib/constants';
@@ -27,8 +27,11 @@ const cardSelect = `rounded border border-border-strong bg-surface-page px-2 py-
  * - M10: one-click "Copy" button that copies the task + context as a Markdown prompt.
  * - 12a: the description preview is shown as plain text (Markdown symbols stripped).
  * - 12e: owner and "Hand off to…" use the board's real members.
+ * - 12g: draggable between columns with a mouse; the status dropdown remains the
+ *   keyboard / screen-reader way to move a card.
  *
- * `actions` = { open(task), move(task, status), handOff(task, member) }
+ * `actions` = { open(task), move(task, status), handOff(task, member),
+ *               startDrag(task), endDrag(), draggingId }
  */
 export default function TaskCard({ task, actions }) {
   const statusId = useId();
@@ -40,8 +43,21 @@ export default function TaskCard({ task, actions }) {
   const handOffOptions = members.filter((m) => m.id !== owner?.id);
 
   return (
-    <article className={`relative rounded-md border border-l-4 border-border-subtle ${stripe} bg-surface-card ${due?.card ?? ''} p-3 transition-colors hover:bg-surface-raised has-[.card-open:focus-visible]:outline has-[.card-open:focus-visible]:outline-2 has-[.card-open:focus-visible]:outline-offset-2 has-[.card-open:focus-visible]:outline-brand-primary`}>
-      <h3 className="text-sm font-medium text-text-primary">
+    <article
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', String(task.id));
+        e.dataTransfer.effectAllowed = 'move';
+        actions.startDrag?.(task);
+      }}
+      onDragEnd={() => actions.endDrag?.()}
+      className={`group relative cursor-grab rounded-md border border-l-4 border-border-subtle ${stripe} bg-surface-card ${due?.card ?? ''} p-3 transition-colors hover:bg-surface-raised active:cursor-grabbing ${actions.draggingId === task.id ? 'opacity-40' : ''} has-[.card-open:focus-visible]:outline has-[.card-open:focus-visible]:outline-2 has-[.card-open:focus-visible]:outline-offset-2 has-[.card-open:focus-visible]:outline-brand-primary`}
+    >
+      <GripVertical
+        aria-hidden="true"
+        className="absolute right-1.5 top-2 h-4 w-4 text-text-muted opacity-0 transition-opacity group-hover:opacity-100"
+      />
+      <h3 className="pr-4 text-sm font-medium text-text-primary">
         <button
           type="button"
           onClick={() => actions.open(task)}

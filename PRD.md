@@ -224,8 +224,9 @@ The hackathon is "done" when all 13 milestone tags are pushed to your repo and v
 | FR-26 | The assignee list shall contain only the members of the current board. | Non-MVP | DG | M12 |
 | FR-27 | Deliverable anchors shall belong to a board, so each board has its own set. | Non-MVP | DG | M12 |
 | FR-28 | The marker shall be able to use the hosted prototype without registering (for example, a pre-filled demo account or guest mode). | MVP | AS | M13 |
+| FR-29 | The user shall be able to move a task to another column by dragging its card with a mouse. The status dropdown (FR-06) remains available as the non-drag alternative. | Non-MVP | CB (M12 "drag cards") | M12 (12g) |
 
-Further M12 "secret sauce" features (e.g. drag and drop, collapsible columns, search) are added only if each one is justified, and they will be listed here when chosen.
+Other M12 "secret sauce" ideas (e.g. collapsible columns, search) are added only if each one is justified; none were added beyond FR-29.
 
 ## 15. Non-functional requirements
 

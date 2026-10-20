@@ -109,7 +109,7 @@ Sizes (no text below 12 px):
 - **Buttons:** primary = solid `brand-primary` fill with dark text, rounded-md, at least 36 px tall; secondary = transparent with a `border-strong` outline. Every button has a visible 2 px `brand-primary` focus ring with an offset (`focus-visible`).
 - **Modal:** centred, max-w-lg, `surface-raised` background, page dimmed with a black backdrop at 60% opacity; focus stays inside the modal and Esc closes it; the first field gets focus when it opens.
 - **Empty states:** dashed `border-subtle` box, muted text, encouraging, never sad.
-- **Drag affordance:** none at first: each card has a status dropdown, which works with the keyboard and screen readers. Drag and drop may be added in M12 as an extra, with the dropdown kept as the accessible alternative.
+- **Drag affordance:** cards can be dragged between columns with a mouse (M12). A grip icon appears on hover and the cursor changes to a hand. While dragging, the card fades, other columns show a dashed teal outline, and the column under the pointer highlights. Dragging is never the only way to move a card: every card keeps its status dropdown, which works with a keyboard and screen readers (WCAG 2.2 SC 2.5.7).
 - **Motion:** a 200 ms fade only, and none when the user has `prefers-reduced-motion` set.
 
 ## 5. Voice / microcopy
