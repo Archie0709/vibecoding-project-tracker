@@ -14,3 +14,6 @@ export const TASK_TYPES = [
   { id: 'feature', label: 'Feature' },
   { id: 'bug',     label: 'Bug' },
 ];
+
+// M9 context: which AI tool the context relates to (FR-15).
+export const AI_TOOLS = ['Claude', 'ChatGPT', 'Codex', 'Cursor', 'Gemini', 'GitHub Copilot', 'Lovable', 'Replit', 'Other'];

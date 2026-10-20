@@ -51,6 +51,13 @@ export function seedTasks() {
       status: 'todo',
       assignee: 'Jordan',
       dueDate: isoDaysFromToday(5),
+      context:
+        'Goal: add a "Copy as Prompt Context" button to each task.\n' +
+        'Output should be Markdown: task title, type, status, owner, due date, then this context block.\n' +
+        'Use navigator.clipboard.writeText with a textarea fallback; show a toast on success.\n' +
+        'Constraints: React + Tailwind, keep it keyboard accessible.',
+      contextTool: 'Claude',
+      contextUpdatedAt: new Date().toISOString(),
     },
   ];
 }

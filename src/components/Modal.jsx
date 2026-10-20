@@ -55,7 +55,7 @@ export default function Modal({
         e.preventDefault();
         onClose();
       }}
-      className={`w-[calc(100%-2rem)] ${className} rounded-lg bg-surface-raised p-0 text-text-primary shadow-2xl ring-1 ring-border-subtle backdrop:bg-black/60`}
+      className={`max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] overflow-y-auto ${className} rounded-lg bg-surface-raised p-0 text-text-primary shadow-2xl ring-1 ring-border-subtle backdrop:bg-black/60`}
     >
       {open && children}
     </dialog>

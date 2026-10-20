@@ -1,7 +1,8 @@
 import { useId, useRef, useState } from 'react';
 import Modal from './Modal';
 import ConfirmDialog from './ConfirmDialog';
-import { STAGES, TASK_TYPES, TEAM } from '../lib/constants';
+import { AI_TOOLS, STAGES, TASK_TYPES, TEAM } from '../lib/constants';
+import { formatTimestamp } from '../lib/dates';
 import { typeStyle } from '../lib/taskTypes';
 import { btnDanger, btnPrimary, btnSecondary, inputClass, labelClass } from '../lib/ui';
 
@@ -14,13 +15,15 @@ const EMPTY_TASK = {
   status: 'todo',
   assignee: '',
   dueDate: '',
+  context: '',
+  contextTool: '',
 };
 
-/** One modal for both creating and editing a task (FR-03, FR-04, FR-05). */
+/** One modal for both creating and editing a task (FR-03, FR-04, FR-05, M9 context FR-14–16). */
 export default function TaskModal({ open, task, onClose, onSave, onDelete }) {
   const titleId = useId();
   return (
-    <Modal open={open} onClose={onClose} labelledBy={titleId}>
+    <Modal open={open} onClose={onClose} labelledBy={titleId} className="max-w-2xl">
       <TaskForm headingId={titleId} task={task} onClose={onClose} onSave={onSave} onDelete={onDelete} />
     </Modal>
   );
@@ -29,7 +32,9 @@ export default function TaskModal({ open, task, onClose, onSave, onDelete }) {
 function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
   const isEdit = Boolean(task);
   const [values, setValues] = useState(() =>
-    isEdit ? { ...EMPTY_TASK, ...task, dueDate: task.dueDate ?? '' } : EMPTY_TASK,
+    isEdit
+      ? { ...EMPTY_TASK, ...task, dueDate: task.dueDate ?? '', context: task.context ?? '', contextTool: task.contextTool ?? '' }
+      : EMPTY_TASK,
   );
   const [titleError, setTitleError] = useState('');
   const [saveError, setSaveError] = useState('');
@@ -44,6 +49,9 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
     status: useId(),
     assignee: useId(),
     dueDate: useId(),
+    context: useId(),
+    contextHint: useId(),
+    contextTool: useId(),
   };
 
   const set = (field) => (e) => setValues((v) => ({ ...v, [field]: e.target.value }));
@@ -57,6 +65,13 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
       return;
     }
     setTitleError('');
+
+    // FR-16: stamp the context time automatically, only when the context or tool actually changed.
+    const context = values.context.trimEnd();
+    const contextTool = values.contextTool || null;
+    const contextChanged = context !== (task?.context ?? '') || contextTool !== (task?.contextTool ?? null);
+    const contextUpdatedAt = contextChanged ? new Date().toISOString() : task?.contextUpdatedAt ?? null;
+
     setSaving(true);
     setSaveError('');
     try {
@@ -67,6 +82,9 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
         status: values.status,
         assignee: values.assignee,
         dueDate: values.dueDate || null,
+        context,
+        contextTool,
+        contextUpdatedAt: context || contextTool ? contextUpdatedAt : null,
       });
     } catch (err) {
       setSaveError(`Couldn't save: ${err.message}`);
@@ -180,7 +198,48 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
             </div>
           </div>
 
-          {/* TODO M9 context: Context textarea + AI tool picker go here. */}
+          {/* M9 context: the curated briefing for the next AI tool or teammate (FR-14, FR-15, FR-16). */}
+          <div className="rounded-md border border-border-subtle bg-surface-page/40 p-4">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <label htmlFor={ids.context} className={labelClass}>AI context</label>
+                <p id={ids.contextHint} className="text-xs text-text-muted">
+                  Paste what the next AI tool or teammate needs: the prompt, conversation, bug log or requirements.
+                </p>
+              </div>
+              <div className="w-44">
+                <label htmlFor={ids.contextTool} className={labelClass}>AI tool used</label>
+                <select
+                  id={ids.contextTool}
+                  value={values.contextTool}
+                  onChange={set('contextTool')}
+                  className={inputClass}
+                >
+                  <option value="">Not specified</option>
+                  {AI_TOOLS.map((tool) => (
+                    <option key={tool} value={tool}>{tool}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <textarea
+              id={ids.context}
+              rows={8}
+              value={values.context}
+              onChange={set('context')}
+              aria-describedby={ids.contextHint}
+              spellCheck={false}
+              className={`${inputClass} mt-3 font-mono text-[13px] leading-relaxed`}
+            />
+            <p className="mt-2 flex justify-between text-xs text-text-muted">
+              <span>
+                {task?.contextUpdatedAt
+                  ? <>Last updated <time dateTime={task.contextUpdatedAt}>{formatTimestamp(task.contextUpdatedAt)}</time></>
+                  : 'Not saved yet'}
+              </span>
+              <span>{values.context.length.toLocaleString('en-GB')} characters</span>
+            </p>
+          </div>
 
           {saveError && (
             <p role="alert" className="text-sm text-due-overdue">{saveError}</p>

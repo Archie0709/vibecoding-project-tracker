@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { MessageSquareText } from 'lucide-react';
 import { STAGES, TEAM } from '../lib/constants';
 import { getDueState } from '../lib/dueStatus';
 import { typeStyle } from '../lib/taskTypes';
@@ -18,6 +19,7 @@ const cardSelect = `rounded border border-border-strong bg-surface-page px-2 py-
  * - M6: a 4px left stripe in the type colour plus an icon + label badge.
  * - M7: assignee badge + "Hand off to…" dropdown (FR-09, FR-10).
  * - M8: due-state chip (icon + text) and a faint background tint on the card (FR-11, FR-12).
+ * - M9: a "Context" marker when the task has AI context, naming the tool if recorded.
  *
  * `actions` = { open(task), move(task, status), handOff(task, name) }
  */
@@ -58,6 +60,15 @@ export default function TaskCard({ task, actions }) {
             <AssigneeBadge name={task.assignee} />
           </dd>
         </div>
+        {task.context && (
+          <div>
+            <dt className="sr-only">AI context</dt>
+            <dd className="inline-flex items-center gap-1 text-text-muted">
+              <MessageSquareText aria-hidden="true" className="h-3.5 w-3.5" />
+              {task.contextTool ? `Context · ${task.contextTool}` : 'Context'}
+            </dd>
+          </div>
+        )}
         {due && (
           <div>
             <dt className="sr-only">Due date</dt>

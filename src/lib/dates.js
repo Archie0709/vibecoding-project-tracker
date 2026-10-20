@@ -45,3 +45,14 @@ export function formatDuration(days) {
   if (months < 12) return plural(months, 'month');
   return plural(Math.max(1, Math.round(n / 365.25)), 'year');
 }
+
+/** e.g. "20 Oct, 13:20" from an ISO timestamp. */
+export function formatTimestamp(isoTimestamp) {
+  if (!isoTimestamp) return '';
+  return new Date(isoTimestamp).toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
