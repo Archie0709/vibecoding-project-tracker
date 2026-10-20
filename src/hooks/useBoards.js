@@ -79,7 +79,22 @@ export function useBoards() {
     [boards, currentId, selectBoard],
   );
 
+  /** Drop a board from the list without deleting it (used when you leave a board, 12e). */
+  const forgetBoard = useCallback(
+    (id) => {
+      const remaining = boards.filter((b) => b.id !== id);
+      setBoards(remaining);
+      if (id === currentId) selectBoard(remaining[0]?.id ?? null);
+    },
+    [boards, currentId, selectBoard],
+  );
+
+  /** Keep a board's details (e.g. member count) in sync after changes made elsewhere. */
+  const patchBoard = useCallback((id, patch) => {
+    setBoards((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+  }, []);
+
   const currentBoard = boards.find((b) => b.id === currentId) ?? null;
 
-  return { boards, currentBoard, loading, error, selectBoard, createBoard, renameBoard, deleteBoard };
+  return { boards, currentBoard, loading, error, selectBoard, createBoard, renameBoard, deleteBoard, forgetBoard, patchBoard };
 }

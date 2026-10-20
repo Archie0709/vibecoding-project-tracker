@@ -2,12 +2,14 @@ package com.vibetracker.board;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.vibetracker.auth.AuthDtos.UserResponse;
 import com.vibetracker.board.BoardDtos.AnchorResponse;
 import com.vibetracker.board.BoardDtos.BoardResponse;
 import com.vibetracker.common.ApiException;
@@ -19,7 +21,7 @@ import com.vibetracker.repository.BoardRepository;
 import com.vibetracker.repository.UserRepository;
 
 /**
- * 12d boards (FR-24, FR-27).
+ * 12d boards (FR-24, FR-27) and 12e members (FR-25, FR-26).
  * Every query checks membership: a board you're not a member of is reported as
  * "not found" rather than "forbidden", so board IDs can't be probed (NFR-14).
  * All members are equal admins, so any member can rename or delete a board.
@@ -90,6 +92,46 @@ public class BoardService {
                 .orElseThrow(() -> ApiException.notFound("No deliverable slot called '" + slot + "'."));
         anchor.setUrl(cleanUrl(url));
         return AnchorResponse.from(anchor);
+    }
+
+    // ---- Members (12e) ------------------------------------------------------
+
+    @Transactional(readOnly = true)
+    public List<UserResponse> listMembers(User user, Long boardId) {
+        return membersOf(requireBoard(user, boardId));
+    }
+
+    @Transactional
+    public List<UserResponse> addMember(User user, Long boardId, Long newMemberId) {
+        Board board = requireBoard(user, boardId);
+        if (board.hasMember(newMemberId)) {
+            throw ApiException.conflict("They're already a member of this board.");
+        }
+        User newMember = users.findById(newMemberId)
+                .orElseThrow(() -> ApiException.notFound("User not found."));
+        board.getMembers().add(newMember);
+        return membersOf(board);
+    }
+
+    /** Any member can remove any member (all are admins), including themselves (= leave). */
+    @Transactional
+    public List<UserResponse> removeMember(User user, Long boardId, Long memberId) {
+        Board board = requireBoard(user, boardId);
+        if (!board.hasMember(memberId)) {
+            throw ApiException.notFound("They aren't a member of this board.");
+        }
+        if (board.getMembers().size() == 1) {
+            throw ApiException.badRequest("A board needs at least one member. Delete the board instead.");
+        }
+        board.getMembers().removeIf(member -> member.getId().equals(memberId));
+        return membersOf(board);
+    }
+
+    private static List<UserResponse> membersOf(Board board) {
+        return board.getMembers().stream()
+                .sorted(Comparator.comparing(User::getName, String.CASE_INSENSITIVE_ORDER))
+                .map(UserResponse::from)
+                .toList();
     }
 
     /** The board if the user is a member of it; 404 otherwise. Used by other services too. */

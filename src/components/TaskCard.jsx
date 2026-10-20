@@ -1,6 +1,8 @@
 import { useId } from 'react';
 import { MessageSquareText } from 'lucide-react';
-import { STAGES, TEAM } from '../lib/constants';
+import { useMembers } from '../hooks/useMembers';
+import { resolveAssignee } from '../lib/assignee';
+import { STAGES } from '../lib/constants';
 import { getDueState } from '../lib/dueStatus';
 import { stripMarkdown } from '../lib/markdownText';
 import { typeStyle } from '../lib/taskTypes';
@@ -24,15 +26,18 @@ const cardSelect = `rounded border border-border-strong bg-surface-page px-2 py-
  * - M9: a "Context" marker when the task has AI context, naming the tool if recorded.
  * - M10: one-click "Copy" button that copies the task + context as a Markdown prompt.
  * - 12a: the description preview is shown as plain text (Markdown symbols stripped).
+ * - 12e: owner and "Hand off to…" use the board's real members.
  *
- * `actions` = { open(task), move(task, status), handOff(task, name) }
+ * `actions` = { open(task), move(task, status), handOff(task, member) }
  */
 export default function TaskCard({ task, actions }) {
   const statusId = useId();
   const handOffId = useId();
   const { stripe } = typeStyle(task.type);
   const due = getDueState(task);
-  const handOffOptions = TEAM.filter((name) => name !== task.assignee);
+  const { members } = useMembers();
+  const owner = resolveAssignee(task, members);
+  const handOffOptions = members.filter((m) => m.id !== owner?.id);
 
   return (
     <article className={`relative rounded-md border border-l-4 border-border-subtle ${stripe} bg-surface-card ${due?.card ?? ''} p-3 transition-colors hover:bg-surface-raised has-[.card-open:focus-visible]:outline has-[.card-open:focus-visible]:outline-2 has-[.card-open:focus-visible]:outline-offset-2 has-[.card-open:focus-visible]:outline-brand-primary`}>
@@ -61,7 +66,7 @@ export default function TaskCard({ task, actions }) {
         <div>
           <dt className="sr-only">Assigned to</dt>
           <dd>
-            <AssigneeBadge name={task.assignee} />
+            <AssigneeBadge name={owner?.name} />
           </dd>
         </div>
         {task.context && (
@@ -109,18 +114,21 @@ export default function TaskCard({ task, actions }) {
           <select
             id={handOffId}
             value=""
-            onChange={(e) => e.target.value && actions.handOff(task, e.target.value)}
+            onChange={(e) => {
+              const member = members.find((m) => String(m.id) === e.target.value);
+              if (member) actions.handOff(task, member);
+            }}
             className={cardSelect}
           >
             <option value="" disabled>Hand off to…</option>
-            {handOffOptions.map((name) => (
-              <option key={name} value={name}>{name}</option>
+            {handOffOptions.map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
             ))}
           </select>
         </div>
 
         <div className="ml-auto">
-          <CopyPromptButton task={task} />
+          <CopyPromptButton task={{ ...task, assignee: owner?.name ?? '' }} />
         </div>
       </div>
     </article>

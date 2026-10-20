@@ -3,12 +3,14 @@ import { LogOut, ServerCrash } from 'lucide-react';
 import AnchorBoard from './components/AnchorBoard';
 import AuthScreen from './components/AuthScreen';
 import BoardBar from './components/BoardBar';
+import MembersPanel from './components/MembersPanel';
 import Board from './components/Board';
 import TaskModal from './components/TaskModal';
 import { ToastProvider, useToast } from './components/Toast';
 import { useAnchors } from './hooks/useAnchors';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { useBoards } from './hooks/useBoards';
+import { MembersProvider, useBoardMembers } from './hooks/useMembers';
 import { useTasks } from './hooks/useTasks';
 import { STAGES } from './lib/constants';
 import { btnPrimary, btnSecondary } from './lib/ui';
@@ -24,6 +26,7 @@ import { btnPrimary, btnSecondary } from './lib/ui';
  *   src/hooks/useAnchors.js deliverable links (M11)
  *   src/hooks/useAuth.jsx   who is logged in (12c)
  *   src/hooks/useBoards.js  the user's boards and which one is open (12d)
+ *   src/hooks/useMembers.jsx the open board's members, shared via context (12e)
  *
  * Core milestones M4–M11 complete. M12 (secret sauce) builds on this.
  */
@@ -79,6 +82,14 @@ function Tracker() {
     showToast('Logged out.');
   }
 
+  /** 12e: after leaving a board, drop it from the list and put focus somewhere sensible. */
+  function handleLeft(boardId) {
+    boards.forgetBoard(boardId);
+    requestAnimationFrame(() =>
+      (document.getElementById('board-select') ?? document.getElementById('new-board-button'))?.focus(),
+    );
+  }
+
   return (
     <div className="min-h-screen p-6">
       <a
@@ -126,7 +137,7 @@ function Tracker() {
           />
           {boards.currentBoard ? (
             // key: switching boards remounts the view, so tasks, links and modals reset cleanly.
-            <BoardView key={boards.currentBoard.id} board={boards.currentBoard} />
+            <BoardView key={boards.currentBoard.id} board={boards.currentBoard} onLeft={handleLeft} />
           ) : (
             <NoBoards onCreate={() => document.getElementById('new-board-button')?.click()} />
           )}
@@ -151,8 +162,9 @@ function NoBoards({ onCreate }) {
 }
 
 /** Everything that belongs to one board: its deliverables, tasks and the task modal. */
-function BoardView({ board }) {
+function BoardView({ board, onLeft }) {
   const { tasks, loading, error, addTask, editTask, removeTask } = useTasks(board.id);
+  const members = useBoardMembers(board.id);
   const { anchors, saveAnchor } = useAnchors(board.id);
   const showToast = useToast();
 
@@ -189,16 +201,16 @@ function BoardView({ board }) {
     showToast(`Moved "${task.title}" to ${label}.`);
   }
 
-  async function handleHandOff(task, name) {
-    await editTask(task.id, { assignee: name });
-    showToast(`Handed off to ${name}.`);
+  async function handleHandOff(task, member) {
+    await editTask(task.id, { assigneeId: member.id, assignee: '' });
+    showToast(`Handed off to ${member.name}.`);
   }
 
   // Everything a card can do, passed down Board → Column → TaskCard as one object.
   const cardActions = { open: openEdit, move: handleMove, handOff: handleHandOff };
 
   return (
-    <>
+    <MembersProvider value={members}>
       {/* M11: pinned deliverables, always visible above the board (FR-18, FR-19). */}
       <AnchorBoard anchors={anchors} onSave={saveAnchor} />
 
@@ -207,9 +219,12 @@ function BoardView({ board }) {
           <h2 id="board-heading" className="text-lg font-semibold text-text-primary">
             {board.name}
           </h2>
-          <button id="new-task-button" type="button" className={btnPrimary} onClick={openCreate}>
-            + New task
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <MembersPanel board={board} onLeft={onLeft} />
+            <button id="new-task-button" type="button" className={btnPrimary} onClick={openCreate}>
+              + New task
+            </button>
+          </div>
         </div>
 
         {loading && <p className="text-text-muted">Loading tasks…</p>}
@@ -228,6 +243,6 @@ function BoardView({ board }) {
         onSave={handleSave}
         onDelete={handleDelete}
       />
-    </>
+    </MembersProvider>
   );
 }

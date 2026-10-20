@@ -7,8 +7,6 @@ export const STAGES = [
   { id: 'done',        label: 'Done' },
 ];
 
-// Demo team for M7–M11 (PRD §8). From M12 this is replaced by the board's members.
-export const TEAM = ['Archie', 'Jordan', 'Priya'];
 
 export const TASK_TYPES = [
   { id: 'feature', label: 'Feature' },

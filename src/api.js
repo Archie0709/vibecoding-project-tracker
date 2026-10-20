@@ -5,6 +5,8 @@
  * 12c:    accounts (register / log in / log out) use the Spring Boot REST API.
  * 12d:    boards and deliverable anchors use the REST API; tasks are kept per board
  *         in localStorage for now.
+ * 12e:    board members and the user list use the REST API. Tasks store the
+ *         assignee as a user id (assigneeId).
  * 12f:    tasks switch to the REST API too. The functions are already async and
  *         take a boardId, so components using them won't need to change.
  */
@@ -123,6 +125,25 @@ export function deleteBoard(boardId) {
   return request(`/boards/${boardId}`, { method: 'DELETE' });
 }
 
+// ---- Users & board members (12e) ------------------------------------------
+
+/** Everyone with an account on this (self-hosted) instance. */
+export function listUsers() {
+  return request('/users');
+}
+
+export function listMembers(boardId) {
+  return request(`/boards/${boardId}/members`);
+}
+
+export function addMember(boardId, userId) {
+  return request(`/boards/${boardId}/members`, { method: 'POST', body: { userId } });
+}
+
+export function removeMember(boardId, userId) {
+  return request(`/boards/${boardId}/members/${userId}`, { method: 'DELETE' });
+}
+
 // ---- Deliverable anchors (M11, per board from 12d) ------------------------
 
 export function listAnchors(boardId) {
@@ -157,7 +178,7 @@ export async function createTask(boardId, input) {
     description: '',
     type: 'feature',
     status: 'todo',
-    assignee: '',
+    assigneeId: null,
     dueDate: null,
     context: '',
     contextTool: null,

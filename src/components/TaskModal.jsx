@@ -3,7 +3,9 @@ import Modal from './Modal';
 import ConfirmDialog from './ConfirmDialog';
 import CopyPromptButton from './CopyPromptButton';
 import MarkdownEditor from './MarkdownEditor';
-import { AI_TOOLS, STAGES, TASK_TYPES, TEAM } from '../lib/constants';
+import { useMembers } from '../hooks/useMembers';
+import { resolveAssignee } from '../lib/assignee';
+import { AI_TOOLS, STAGES, TASK_TYPES } from '../lib/constants';
 import { formatTimestamp } from '../lib/dates';
 import { typeStyle } from '../lib/taskTypes';
 import { btnDanger, btnPrimary, btnSecondary, inputClass, labelClass } from '../lib/ui';
@@ -15,7 +17,7 @@ const EMPTY_TASK = {
   description: '',
   type: 'feature',
   status: 'todo',
-  assignee: '',
+  assigneeId: '',
   dueDate: '',
   context: '',
   contextTool: '',
@@ -33,11 +35,19 @@ export default function TaskModal({ open, task, onClose, onSave, onDelete }) {
 
 function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
   const isEdit = Boolean(task);
-  const [values, setValues] = useState(() =>
-    isEdit
-      ? { ...EMPTY_TASK, ...task, dueDate: task.dueDate ?? '', context: task.context ?? '', contextTool: task.contextTool ?? '' }
-      : EMPTY_TASK,
-  );
+  const { members } = useMembers();
+  const [values, setValues] = useState(() => {
+    if (!isEdit) return EMPTY_TASK;
+    const owner = resolveAssignee(task, members);
+    return {
+      ...EMPTY_TASK,
+      ...task,
+      assigneeId: owner?.id != null ? String(owner.id) : '',
+      dueDate: task.dueDate ?? '',
+      context: task.context ?? '',
+      contextTool: task.contextTool ?? '',
+    };
+  });
   const [titleError, setTitleError] = useState('');
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -83,7 +93,8 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
         description: values.description.trim(),
         type: values.type,
         status: values.status,
-        assignee: values.assignee,
+        assigneeId: values.assigneeId ? Number(values.assigneeId) : null,
+        assignee: '', // pre-12e name field, replaced by assigneeId
         dueDate: values.dueDate || null,
         context,
         contextTool,
@@ -189,10 +200,10 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
 
             <div>
               <label htmlFor={ids.assignee} className={labelClass}>Assignee</label>
-              <select id={ids.assignee} value={values.assignee} onChange={set('assignee')} className={inputClass}>
+              <select id={ids.assignee} value={values.assigneeId} onChange={set('assigneeId')} className={inputClass}>
                 <option value="">Unassigned</option>
-                {TEAM.map((name) => (
-                  <option key={name} value={name}>{name}</option>
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
               </select>
             </div>
@@ -272,6 +283,7 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
               task={{
                 ...task,
                 ...values,
+                assignee: members.find((m) => String(m.id) === values.assigneeId)?.name ?? '',
                 title: values.title.trim() || 'Untitled task',
                 dueDate: values.dueDate || null,
                 contextTool: values.contextTool || null,
