@@ -211,7 +211,7 @@ function MembersContent({ headingId, board, onClose, onLeft }) {
           message={
             removing.id === user.id
               ? `Leave "${board.name}"? You won't see it any more unless someone adds you back.`
-              : `Remove ${removing.name} from "${board.name}"? They won't see this board any more. Their tasks stay on the board.`
+              : `Remove ${removing.name} from "${board.name}"? They won't see this board any more. Their tasks stay on the board, unassigned.`
           }
           confirmLabel={removing.id === user.id ? 'Leave board' : 'Remove'}
           fallbackFocusId="members-done"

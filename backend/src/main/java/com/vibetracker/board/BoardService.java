@@ -18,6 +18,7 @@ import com.vibetracker.model.Board;
 import com.vibetracker.model.User;
 import com.vibetracker.repository.AnchorRepository;
 import com.vibetracker.repository.BoardRepository;
+import com.vibetracker.repository.TaskRepository;
 import com.vibetracker.repository.UserRepository;
 
 /**
@@ -39,11 +40,13 @@ public class BoardService {
     private final BoardRepository boards;
     private final AnchorRepository anchors;
     private final UserRepository users;
+    private final TaskRepository tasks;
 
-    public BoardService(BoardRepository boards, AnchorRepository anchors, UserRepository users) {
+    public BoardService(BoardRepository boards, AnchorRepository anchors, UserRepository users, TaskRepository tasks) {
         this.boards = boards;
         this.anchors = anchors;
         this.users = users;
+        this.tasks = tasks;
     }
 
     @Transactional(readOnly = true)
@@ -113,7 +116,8 @@ public class BoardService {
         return membersOf(board);
     }
 
-    /** Any member can remove any member (all are admins), including themselves (= leave). */
+    /** Any member can remove any member (all are admins), including themselves (= leave).
+     *  Their tasks on this board become unassigned. */
     @Transactional
     public List<UserResponse> removeMember(User user, Long boardId, Long memberId) {
         Board board = requireBoard(user, boardId);
@@ -124,6 +128,7 @@ public class BoardService {
             throw ApiException.badRequest("A board needs at least one member. Delete the board instead.");
         }
         board.getMembers().removeIf(member -> member.getId().equals(memberId));
+        tasks.unassignAll(boardId, memberId); // their tasks stay on the board, unassigned
         return membersOf(board);
     }
 

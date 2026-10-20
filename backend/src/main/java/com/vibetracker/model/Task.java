@@ -81,6 +81,8 @@ public class Task {
     public LocalDate getDueDate() { return dueDate; }
     public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
     public LocalDate getCreatedDate() { return createdDate; }
+    /** Only used when importing older tasks; otherwise set automatically on create. */
+    public void setCreatedDate(LocalDate createdDate) { this.createdDate = createdDate; }
     public String getContext() { return context; }
     public void setContext(String context) { this.context = context; }
     public String getContextTool() { return contextTool; }

@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 /**
  * Turns errors into a consistent JSON shape the frontend can show next to form fields:
@@ -33,6 +34,17 @@ public class GlobalExceptionHandler {
         body.put("message", "Please check the highlighted fields.");
         body.put("fieldErrors", fieldErrors);
         return ResponseEntity.badRequest().body(body);
+    }
+
+    /** Validation errors inside lists (e.g. one bad task in an import). */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodValidation(HandlerMethodValidationException ex) {
+        String first = ex.getAllErrors().stream()
+                .map(error -> error.getDefaultMessage())
+                .filter(message -> message != null && !message.isBlank())
+                .findFirst()
+                .orElse("Some of the data was not valid.");
+        return ResponseEntity.badRequest().body(Map.of("message", first));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

@@ -101,7 +101,8 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
         contextUpdatedAt: context || contextTool ? contextUpdatedAt : null,
       });
     } catch (err) {
-      setSaveError(`Couldn't save: ${err.message}`);
+      const detail = Object.values(err.fieldErrors ?? {})[0] ?? err.message;
+      setSaveError(`Couldn't save: ${detail}`);
       setSaving(false);
     }
   }

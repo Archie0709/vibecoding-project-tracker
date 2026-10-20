@@ -3,18 +3,13 @@
  *
  * M4–M11: tasks and anchors were backed by localStorage.
  * 12c:    accounts (register / log in / log out) use the Spring Boot REST API.
- * 12d:    boards and deliverable anchors use the REST API; tasks are kept per board
- *         in localStorage for now.
- * 12e:    board members and the user list use the REST API. Tasks store the
+ * 12d:    boards and deliverable anchors use the REST API.
+ * 12e:    board members and the user list use the REST API; tasks store the
  *         assignee as a user id (assigneeId).
- * 12f:    tasks switch to the REST API too. The functions are already async and
- *         take a boardId, so components using them won't need to change.
+ * 12f:    tasks use the REST API, so they are shared by everyone on a board.
+ *         Components never changed: they only ever called these async functions.
  */
-import { toISODate } from './lib/dates';
 
-// Tasks stay in this browser until 12f, stored per board.
-const tasksKey = (boardId) => `vibetracker.tasks.${boardId}`;
-const LEGACY_TASKS_KEY = 'vibetracker.tasks'; // M4–M11 single-board storage
 
 function read(key, fallback) {
   try {
@@ -25,17 +20,6 @@ function read(key, fallback) {
   }
 }
 
-function write(key, value) {
-  try {
-    window.localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    /* quota or private-mode error — ignore for the hackathon */
-  }
-}
-
-function newId() {
-  return window.crypto?.randomUUID?.() ?? `t-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
 
 // ---- HTTP helper (REST API on Spring Boot, proxied by Vite at /api) --------
 
@@ -154,57 +138,74 @@ export function updateAnchor(boardId, slot, { url }) {
   return request(`/boards/${boardId}/anchors/${slot}`, { method: 'PUT', body: { url } });
 }
 
-// ---- Tasks (localStorage per board until 12f) ------------------------------
+// ---- Tasks (REST API from 12f) ---------------------------------------------
 
-export async function listTasks(boardId) {
-  let tasks = read(tasksKey(boardId), null);
-  if (tasks == null) {
-    // One-off move: the first board opened inherits the tasks from the M4–M11 single board.
-    tasks = read(LEGACY_TASKS_KEY, []);
-    write(tasksKey(boardId), tasks);
-    try {
-      window.localStorage.removeItem(LEGACY_TASKS_KEY);
-    } catch {
-      /* ignore */
-    }
-  }
-  return tasks;
-}
-
-export async function createTask(boardId, input) {
-  const tasks = await listTasks(boardId);
-  const task = {
-    title: '',
-    description: '',
-    type: 'feature',
-    status: 'todo',
-    assigneeId: null,
-    dueDate: null,
-    context: '',
-    contextTool: null,
-    contextUpdatedAt: null,
-    ...input,
-    id: newId(),
-    createdDate: toISODate(),
+/** The fields the API accepts for a task (contextUpdatedAt is set by the server). */
+function toTaskRequest(task) {
+  return {
+    title: task.title,
+    description: task.description ?? '',
+    type: task.type,
+    status: task.status,
+    assigneeId: task.assigneeId ?? null,
+    dueDate: task.dueDate || null,
+    context: task.context ?? '',
+    contextTool: task.contextTool || null,
+    createdDate: task.createdDate ?? null,
   };
-  write(tasksKey(boardId), [...tasks, task]);
-  return task;
 }
 
-export async function updateTask(boardId, id, patch) {
-  const tasks = await listTasks(boardId);
-  let updated = null;
-  const next = tasks.map((t) => {
-    if (t.id !== id) return t;
-    updated = { ...t, ...patch, id: t.id, createdDate: t.createdDate };
-    return updated;
-  });
-  if (!updated) throw new Error(`Task ${id} not found`);
-  write(tasksKey(boardId), next);
-  return updated;
+export function listTasks(boardId) {
+  return request(`/boards/${boardId}/tasks`);
 }
 
-export async function deleteTask(boardId, id) {
-  const tasks = await listTasks(boardId);
-  write(tasksKey(boardId), tasks.filter((t) => t.id !== id));
+export function createTask(boardId, task) {
+  return request(`/boards/${boardId}/tasks`, { method: 'POST', body: toTaskRequest(task) });
+}
+
+/** Sends the whole task (the caller merges its changes into the current task first). */
+export function updateTask(boardId, id, task) {
+  return request(`/boards/${boardId}/tasks/${id}`, { method: 'PUT', body: toTaskRequest(task) });
+}
+
+export function deleteTask(boardId, id) {
+  return request(`/boards/${boardId}/tasks/${id}`, { method: 'DELETE' });
+}
+
+export function importTasks(boardId, tasks) {
+  return request(`/boards/${boardId}/tasks/import`, { method: 'POST', body: tasks.map(toTaskRequest) });
+}
+
+// ---- Tasks left in this browser from before 12f ----------------------------
+
+const isLocalTaskKey = (key) => key === 'vibetracker.tasks' || key.startsWith('vibetracker.tasks.');
+
+/** Every task still saved in this browser (from M4–M11 and 12d), so they can be imported once. */
+export function findLocalTasks() {
+  const found = [];
+  try {
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i);
+      if (key && isLocalTaskKey(key)) {
+        const tasks = read(key, []);
+        if (Array.isArray(tasks)) found.push(...tasks);
+      }
+    }
+  } catch {
+    /* storage unavailable */
+  }
+  return found;
+}
+
+export function clearLocalTasks() {
+  try {
+    const keys = [];
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i);
+      if (key && isLocalTaskKey(key)) keys.push(key);
+    }
+    keys.forEach((key) => window.localStorage.removeItem(key));
+  } catch {
+    /* ignore */
+  }
 }

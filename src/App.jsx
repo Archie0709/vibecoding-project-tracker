@@ -3,6 +3,7 @@ import { LogOut, ServerCrash } from 'lucide-react';
 import AnchorBoard from './components/AnchorBoard';
 import AuthScreen from './components/AuthScreen';
 import BoardBar from './components/BoardBar';
+import LocalTasksBanner from './components/LocalTasksBanner';
 import MembersPanel from './components/MembersPanel';
 import Board from './components/Board';
 import TaskModal from './components/TaskModal';
@@ -19,7 +20,7 @@ import { btnPrimary, btnSecondary } from './lib/ui';
  * Vibecoding Project Tracker.
  *
  * Structure:
- *   src/api.js              data layer (localStorage now, REST API in M12)
+ *   src/api.js              data layer: every read/write goes through the REST API (M12)
  *   src/hooks/useTasks.js   React state over the data layer
  *   src/lib/                constants, dates, seed data, shared UI classes
  *   src/components/         AnchorBoard, Board → Column → TaskCard, TaskModal, Modal, ConfirmDialog, Toast
@@ -163,7 +164,7 @@ function NoBoards({ onCreate }) {
 
 /** Everything that belongs to one board: its deliverables, tasks and the task modal. */
 function BoardView({ board, onLeft }) {
-  const { tasks, loading, error, addTask, editTask, removeTask } = useTasks(board.id);
+  const { tasks, loading, error, addTask, editTask, removeTask, reload } = useTasks(board.id);
   const members = useBoardMembers(board.id);
   const { anchors, saveAnchor } = useAnchors(board.id);
   const showToast = useToast();
@@ -213,6 +214,9 @@ function BoardView({ board, onLeft }) {
     <MembersProvider value={members}>
       {/* M11: pinned deliverables, always visible above the board (FR-18, FR-19). */}
       <AnchorBoard anchors={anchors} onSave={saveAnchor} />
+
+      {/* 12f: one-off import of tasks still saved in this browser from before. */}
+      <LocalTasksBanner board={board} onImported={reload} />
 
       <main id="board" tabIndex={-1} aria-labelledby="board-heading" className="focus:outline-none">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
