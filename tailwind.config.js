@@ -35,6 +35,17 @@ export default {
           neutral: '#8F9BA8',
         },
       },
+      // DESIGN.md §4: a 200 ms fade only, applied with `motion-safe:` so it is
+      // skipped for users who prefer reduced motion.
+      keyframes: {
+        'fade-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+      },
+      animation: {
+        'fade-in': 'fade-in 200ms ease-out',
+      },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'Consolas', 'monospace'],

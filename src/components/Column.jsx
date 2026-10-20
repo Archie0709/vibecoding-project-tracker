@@ -1,7 +1,7 @@
 import TaskCard from './TaskCard';
 
 /** One Kanban column: a labelled region with a list of task cards. */
-export default function Column({ stage, tasks }) {
+export default function Column({ stage, tasks, onOpenTask, onMoveTask }) {
   const headingId = `column-${stage.id}`;
 
   return (
@@ -28,7 +28,7 @@ export default function Column({ stage, tasks }) {
         <ul className="flex flex-col gap-2">
           {tasks.map((task) => (
             <li key={task.id}>
-              <TaskCard task={task} />
+              <TaskCard task={task} onOpen={onOpenTask} onMove={onMoveTask} />
             </li>
           ))}
         </ul>

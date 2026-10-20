@@ -1,5 +1,10 @@
+import { useState } from 'react';
 import Board from './components/Board';
+import TaskModal from './components/TaskModal';
+import { ToastProvider, useToast } from './components/Toast';
 import { useTasks } from './hooks/useTasks';
+import { STAGES } from './lib/constants';
+import { btnPrimary } from './lib/ui';
 
 /**
  * Vibecoding Project Tracker.
@@ -7,20 +12,57 @@ import { useTasks } from './hooks/useTasks';
  * Structure:
  *   src/api.js              data layer (localStorage now, REST API in M12)
  *   src/hooks/useTasks.js   React state over the data layer
- *   src/lib/                constants, dates, seed data
- *   src/components/         Board → Column → TaskCard
+ *   src/lib/                constants, dates, seed data, shared UI classes
+ *   src/components/         Board → Column → TaskCard, TaskModal, Modal, ConfirmDialog, Toast
  *
  * Remaining milestone hooks:
- *   - M5  crud-modal    : "+" button modal and edit-on-click.
  *   - M6  tag-style     : feature vs. bug styling (TaskCard).
  *   - M7  task-owner    : assignee badge + "Hand off to..." dropdown.
  *   - M8  due-tint      : colour cards by due date (TaskCard).
- *   - M9  context       : Context field on the modal.
+ *   - M9  context       : Context field on the modal (TaskModal).
  *   - M10 copy-prompt   : "Copy as Prompt Context" button.
  *   - M11 anchors       : Deliverable Anchor Board above the Kanban.
  */
 export default function App() {
-  const { tasks, loading, error } = useTasks();
+  return (
+    <ToastProvider>
+      <Tracker />
+    </ToastProvider>
+  );
+}
+
+function Tracker() {
+  const { tasks, loading, error, addTask, editTask, removeTask } = useTasks();
+  const showToast = useToast();
+
+  // Modal state: closed, creating (task = null) or editing (task = the task).
+  const [modal, setModal] = useState({ open: false, task: null });
+  const openCreate = () => setModal({ open: true, task: null });
+  const openEdit = (task) => setModal({ open: true, task });
+  const closeModal = () => setModal((m) => ({ ...m, open: false }));
+
+  async function handleSave(values) {
+    if (modal.task) {
+      await editTask(modal.task.id, values);
+      showToast('Changes saved.');
+    } else {
+      await addTask(values);
+      showToast('Task created.');
+    }
+    closeModal();
+  }
+
+  async function handleDelete(id) {
+    await removeTask(id);
+    closeModal();
+    showToast('Task deleted.');
+  }
+
+  async function handleMove(task, status) {
+    await editTask(task.id, { status });
+    const label = STAGES.find((s) => s.id === status)?.label ?? status;
+    showToast(`Moved "${task.title}" to ${label}.`);
+  }
 
   return (
     <div className="min-h-screen p-6">
@@ -31,7 +73,7 @@ export default function App() {
         Skip to board
       </a>
 
-      <header className="mb-6 flex items-end justify-between">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold text-text-primary">
             <span aria-hidden="true" className="text-brand-primary">▍</span>
@@ -41,6 +83,9 @@ export default function App() {
             Archie · Track the task <em>and</em> the prompt that built it.
           </p>
         </div>
+        <button id="new-task-button" type="button" className={btnPrimary} onClick={openCreate}>
+          + New task
+        </button>
       </header>
 
       {/* TODO M11 anchors: Anchor Board goes here, above the board. */}
@@ -52,8 +97,18 @@ export default function App() {
             Couldn&apos;t load tasks: {error.message}
           </p>
         )}
-        {!loading && !error && <Board tasks={tasks} />}
+        {!loading && !error && (
+          <Board tasks={tasks} onOpenTask={openEdit} onMoveTask={handleMove} />
+        )}
       </main>
+
+      <TaskModal
+        open={modal.open}
+        task={modal.task}
+        onClose={closeModal}
+        onSave={handleSave}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }
