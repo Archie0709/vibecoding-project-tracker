@@ -2,6 +2,7 @@ import { useId, useRef, useState } from 'react';
 import Modal from './Modal';
 import ConfirmDialog from './ConfirmDialog';
 import CopyPromptButton from './CopyPromptButton';
+import MarkdownEditor from './MarkdownEditor';
 import { AI_TOOLS, STAGES, TASK_TYPES, TEAM } from '../lib/constants';
 import { formatTimestamp } from '../lib/dates';
 import { typeStyle } from '../lib/taskTypes';
@@ -24,7 +25,7 @@ const EMPTY_TASK = {
 export default function TaskModal({ open, task, onClose, onSave, onDelete }) {
   const titleId = useId();
   return (
-    <Modal open={open} onClose={onClose} labelledBy={titleId} className="max-w-2xl">
+    <Modal open={open} onClose={onClose} labelledBy={titleId} className="max-w-3xl">
       <TaskForm headingId={titleId} task={task} onClose={onClose} onSave={onSave} onDelete={onDelete} />
     </Modal>
   );
@@ -47,6 +48,7 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
     title: useId(),
     titleError: useId(),
     description: useId(),
+    descriptionHint: useId(),
     status: useId(),
     assignee: useId(),
     dueDate: useId(),
@@ -128,13 +130,21 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
           </div>
 
           <div>
-            <label htmlFor={ids.description} className={labelClass}>Description</label>
-            <textarea
+            <MarkdownEditor
               id={ids.description}
+              label="Description"
               rows={4}
               value={values.description}
               onChange={set('description')}
-              className={inputClass}
+              describedBy={ids.descriptionHint}
+              header={
+                <>
+                  <label htmlFor={ids.description} className={labelClass}>Description</label>
+                  <p id={ids.descriptionHint} className="-mt-0.5 text-xs text-text-muted">
+                    Markdown supported: **bold**, _italic_, `code`, - lists, [links](https://…)
+                  </p>
+                </>
+              }
             />
           </div>
 
@@ -205,7 +215,7 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
               <div>
                 <label htmlFor={ids.context} className={labelClass}>AI context</label>
                 <p id={ids.contextHint} className="text-xs text-text-muted">
-                  Paste what the next AI tool or teammate needs: the prompt, conversation, bug log or requirements.
+                  Paste what the next AI tool or teammate needs: the prompt, conversation, bug log or requirements. Markdown supported.
                 </p>
               </div>
               <div className="w-44">
@@ -223,15 +233,17 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
                 </select>
               </div>
             </div>
-            <textarea
-              id={ids.context}
-              rows={8}
-              value={values.context}
-              onChange={set('context')}
-              aria-describedby={ids.contextHint}
-              spellCheck={false}
-              className={`${inputClass} mt-3 font-mono text-[13px] leading-relaxed`}
-            />
+            <div className="mt-3">
+              <MarkdownEditor
+                id={ids.context}
+                label="AI context"
+                rows={8}
+                mono
+                value={values.context}
+                onChange={set('context')}
+                describedBy={ids.contextHint}
+              />
+            </div>
             <p className="mt-2 flex justify-between text-xs text-text-muted">
               <span>
                 {task?.contextUpdatedAt

@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { MessageSquareText } from 'lucide-react';
 import { STAGES, TEAM } from '../lib/constants';
 import { getDueState } from '../lib/dueStatus';
+import { stripMarkdown } from '../lib/markdownText';
 import { typeStyle } from '../lib/taskTypes';
 import { focusRing } from '../lib/ui';
 import AssigneeBadge from './AssigneeBadge';
@@ -22,6 +23,7 @@ const cardSelect = `rounded border border-border-strong bg-surface-page px-2 py-
  * - M8: due-state chip (icon + text) and a faint background tint on the card (FR-11, FR-12).
  * - M9: a "Context" marker when the task has AI context, naming the tool if recorded.
  * - M10: one-click "Copy" button that copies the task + context as a Markdown prompt.
+ * - 12a: the description preview is shown as plain text (Markdown symbols stripped).
  *
  * `actions` = { open(task), move(task, status), handOff(task, name) }
  */
@@ -46,7 +48,7 @@ export default function TaskCard({ task, actions }) {
       </h3>
 
       {task.description && (
-        <p className="mt-1 line-clamp-2 text-sm text-text-muted">{task.description}</p>
+        <p className="mt-1 line-clamp-2 text-sm text-text-muted">{stripMarkdown(task.description)}</p>
       )}
 
       <dl className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-text-muted">
