@@ -16,8 +16,6 @@ import { btnPrimary } from './lib/ui';
  *   src/components/         Board → Column → TaskCard, TaskModal, Modal, ConfirmDialog, Toast
  *
  * Remaining milestone hooks:
- *   - M6  tag-style     : feature vs. bug styling (TaskCard).
- *   - M7  task-owner    : assignee badge + "Hand off to..." dropdown.
  *   - M8  due-tint      : colour cards by due date (TaskCard).
  *   - M9  context       : Context field on the modal (TaskModal).
  *   - M10 copy-prompt   : "Copy as Prompt Context" button.
@@ -64,6 +62,14 @@ function Tracker() {
     showToast(`Moved "${task.title}" to ${label}.`);
   }
 
+  async function handleHandOff(task, name) {
+    await editTask(task.id, { assignee: name });
+    showToast(`Handed off to ${name}.`);
+  }
+
+  // Everything a card can do, passed down Board → Column → TaskCard as one object.
+  const cardActions = { open: openEdit, move: handleMove, handOff: handleHandOff };
+
   return (
     <div className="min-h-screen p-6">
       <a
@@ -98,7 +104,7 @@ function Tracker() {
           </p>
         )}
         {!loading && !error && (
-          <Board tasks={tasks} onOpenTask={openEdit} onMoveTask={handleMove} />
+          <Board tasks={tasks} actions={cardActions} />
         )}
       </main>
 
