@@ -1,6 +1,6 @@
 # Vibecoding Project Tracker — PRD
 
-**Status:** Reviewed by Archie (Archie0709) for `prd-done`. Solo hackathon entry. Where this PRD departs from the starter's original wording, the change is marked **[Amended]** with the reason.
+**Status:** Reviewed by Archie (Archie0709) for `prd-done`, and updated to match the built prototype after M12. Solo hackathon entry. Where this PRD departs from the starter's original wording, the change is marked **[Amended]** with the reason. §17 shows which requirements are implemented.
 
 ---
 
@@ -32,14 +32,17 @@ A single-page web app with two persistent surfaces:
 
 Each task carries the prompt context that produced it, so any teammate can click a button and copy the task + prompt history back into an AI chat to continue work.
 
+**[Amended] M12:** users log in with their own account, can have several boards, and add teammates to a board. Tasks, links and members are stored in a MariaDB database behind a Spring Boot REST API, so everyone on a board sees the same data.
+
 ## 4. Primary user flow
 
-1. Open the Webapp. The board loads from local storage (from M12: log in, pick a board, and it loads from the server).
-2. Click "+" to add a task. Fill in title, type, assignee, due date, prompt context.
-3. Move the task across columns as you work.
-4. When stuck, click "Copy as Prompt Context" on a task and paste it into Claude/ChatGPT/Cursor to continue.
-5. Hand off a task to a teammate with one dropdown.
-6. Drop final deliverable links into the Anchor Board as you produce them.
+1. Open the web app and log in (or create an account). **[Amended]**
+2. Pick a board from the board switcher, or create one; add teammates through **Members**. **[Amended]**
+3. Click "+ New task" to add a task. Fill in title, description (Markdown), type, status, assignee, due date and AI context.
+4. Move the task across columns as you work, using the status dropdown or by dragging the card.
+5. When stuck, click "Copy" on a task and paste the prompt into Claude/ChatGPT/Cursor to continue.
+6. Hand off a task to a teammate with one dropdown.
+7. Drop final deliverable links into the Anchor Board as you produce them.
 
 ## 5. Data model
 
@@ -71,16 +74,21 @@ Anchor = {
 }
 ```
 
-**[Amended] M12 extensions** (additive — the fields above are unchanged so M4–M11 work as specified):
+**[Amended] M12 changes.** The fields above were used as specified for M4–M11. From M12 the data lives in MariaDB (`backend/src/main/resources/schema.sql`) and changes as follows:
 
 ```js
-User   = { id, name, email, githubHandle, passwordHash }   // passwordHash is server-side only (BCrypt)
-Board  = { id, name, ownerId, memberIds: [userId] }        // a user can have many boards
-Task   += { boardId }                                       // assignee becomes a board member's user id
-Anchor += { boardId }                                       // deliverables are per board
+User        = { id, name, email, githubHandle, passwordHash }  // passwordHash is server-side only (BCrypt)
+Board       = { id, name, ownerId, createdAt }                 // a user can have many boards
+BoardMember = { boardId, userId, addedAt }                     // all members are equal admins
+Session     = { token, userId, createdAt, expiresAt }          // login sessions, stored server-side
+
+Task: id is a number assigned by the database; + boardId;
+      assignee (name) is replaced by assigneeId (a member's user id, or null);
+      contextUpdatedAt is set by the server, only when context or tool change.
+Anchor: + boardId — each board has its own four deliverable slots.
 ```
 
-`Task.description` and `Task.context` are rendered as Markdown from M12.
+`Task.description` and `Task.context` are written and rendered as Markdown from M12.
 
 ## 6. Tech stack
 
@@ -88,15 +96,16 @@ Anchor += { boardId }                                       // deliverables are 
 |---|---|---|
 | Framework | React (via Vite) | What the scaffold ships with. Don't migrate. |
 | Styling | Tailwind | Already configured. Use utility classes; no separate CSS files. |
-| State | React `useState` + a `useLocalStorage` hook | Simple, no library needed. |
-| Persistence | **localStorage** | Zero infra. Pick this. Do not switch to a backend mid-hackathon. |
-| Deploy | Vercel | One-click deploy from GitHub. |
-| **[Amended] Backend (M12)** | Java 17+ · Spring Boot 3 · Maven · Spring Data JPA | Strongest language for the developer; typed, well-documented, fast to scaffold with AI. |
+| State | React `useState` + small custom hooks | Simple, no library needed. |
+| Persistence | localStorage (M4–M11) → **[Amended]** MariaDB via the REST API (M12) | localStorage kept the core milestones fast; the database makes boards shared between users. |
+| Deploy | **[Amended]** Local for development and the hackathon demo; hosted link required before submission (NFR-15) | Vercel cannot host the Java backend. |
+| Icons | `lucide-react` | Consistent, accessible SVG icons (DESIGN.md §7). |
+| **[Amended] Backend (M12)** | Java 21 · Spring Boot 3.5 · Maven · Spring Data JPA | The developer's strongest language; typed, well-documented, fast to scaffold with AI. |
 | **[Amended] Database (M12)** | MariaDB (local install, managed via IntelliJ) | Already available on the dev laptop; no Docker needed. |
-| **[Amended] Auth (M12)** | Email + password, BCrypt-hashed, session token | Client Q&A: "login would be ideal" so the tool isn't left exposed. |
-| **[Amended] Markdown (M12)** | `react-markdown` (no raw HTML) | Safe-by-default rendering of task fields. |
+| **[Amended] Auth (M12)** | Email + password, BCrypt-hashed (Spring Security's built-in encoder), server-side session in an HttpOnly cookie | Client Q&A: "login would be ideal" so the tool isn't left exposed. |
+| **[Amended] Markdown (M12)** | `react-markdown` + `remark-gfm` (no raw HTML) | Safe-by-default rendering of task fields; GitHub-style tables and checklists. |
 
-> **Decision [Amended]:** M4–M11 are built exactly as specified, on localStorage, so each milestone ships quickly and independently. All data access goes through a single `src/api.js` layer from M4. In M12 that layer is switched from localStorage to the Spring Boot REST API, so the UI is not rewritten mid-hackathon. Development and the hackathon demo run locally (frontend on Vite, backend on Spring Boot, database on local MariaDB). **However, the module assessment requires a link that the marker can open without registering (see NFR-15)**, so a hosted version is required before submission. Vercel can host the frontend but not the Java backend; the hosting approach for the backend (or a hosted demo mode) is decided before M12 starts.
+> **Decision [Amended]:** M4–M11 are built exactly as specified, on localStorage, so each milestone ships quickly and independently. All data access goes through a single `src/api.js` layer from M4. In M12 that layer is switched from localStorage to the Spring Boot REST API, so the UI is not rewritten mid-hackathon. Development and the hackathon demo run locally (frontend on Vite, backend on Spring Boot, database on local MariaDB). **However, the module assessment requires a link that the marker can open without registering (see NFR-15 and FR-28)**, so a hosted version with demo access is still to be set up before submission. Vercel can host the frontend but not the Java backend.
 
 ## 7. Stage names
 
@@ -115,7 +124,7 @@ Four columns, in this order, with these exact labels in the UI:
 |---|---|---|
 | Developer (Tracks A, B, C) | Archie | Archie0709 |
 
-For M7–M11 the assignee dropdown uses a small fixed demo team list (Archie plus placeholder teammates) so hand-off can be demonstrated. From M12, the assignee list is the board's members, drawn from real user accounts; every user can add any other user of the self-hosted instance to a board (all users are treated as admins — small, self-managed team).
+For M7–M11 the assignee dropdown used a small fixed demo team list (Archie plus placeholder teammates) so hand-off could be demonstrated. From M12, the assignee list is the board's members, drawn from real user accounts; every user can add any other user of the self-hosted instance to a board (all users are treated as admins — small, self-managed team).
 
 ## 9. Milestone ownership
 
@@ -129,10 +138,10 @@ For M7–M11 the assignee dropdown uses a small fixed demo team list (Archie plu
 | 6 | `tag-style` | Feature / bug colors | **B** | Archie |
 | 7 | `task-owner` | Owner indicator + handoff | **A** | Archie |
 | 8 | `due-tint` | Due-date color tinting | **B** | Archie |
-| 9 | `context` | Context field on the task modal | **C** | Archie |
-| 10 | `copy-prompt` | "Copy as Prompt Context" button | **C** | Archie |
+| 9 | `task-context` | Context field on the task modal | **C** | Archie |
+| 10 | `copy-context` | "Copy as Prompt Context" button | **C** | Archie |
 | 11 | `project-deliverables` | Deliverable Anchor Board | **B** | Archie |
-| 12 | `secret-sauce` | The one thing that makes it yours | **C / All** | Archie |
+| 12 | `secret-sauce` | Accounts, multiple boards, members, Markdown, MariaDB backend, drag and drop | **C / All** | Archie |
 | 13 | `pitch-ready` | Demo + pitch rehearsal | **All** | Archie |
 
 
@@ -170,7 +179,7 @@ Fill in:
 - ~~A real backend / shared database.~~ **[Amended]** Moved into M12 scope: required for accounts and shared boards. Built only after M1–M11 are done.
 - Mobile responsive — desktop only is fine.
 - Multi-team support. (Multiple **boards** for one team are in scope for M12; multiple separate teams/organisations are not.)
-- Real-time collaboration.
+- Real-time collaboration. (Boards are shared, but a teammate's changes appear after a page refresh rather than live.)
 
 ## 13. Definition of done
 
@@ -258,8 +267,8 @@ Other M12 "secret sauce" ideas (e.g. collapsible columns, search) are added only
 
 | ID | Data | Fields and rules | Where it comes from | Stored in | MVP |
 |---|---|---|---|---|---|
-| DR-01 | Task (core) | `id` (system), `title` (required, max 120 characters), `description` (optional text), `type` (feature \| bug), `status` (one of the four stage IDs), `assignee`, `dueDate` (optional ISO date), `createdDate` (system) | Entered by the user in the task modal; ID and created date generated by the system | localStorage (MVP) → MariaDB `task` table (M12) | MVP |
-| DR-02 | Task AI context | `context` (long text), `contextTool` (from a fixed list), `contextUpdatedAt` (system timestamp, set on save) | Pasted by the user from AI tool conversations, bug logs or requirements; timestamp from the system | As DR-01 | MVP |
+| DR-01 | Task (core) | `id` (system), `title` (required, max 120 characters), `description` (optional Markdown text), `type` (feature \| bug), `status` (one of the four stage IDs), `assignee` (name, MVP) → `assigneeId` (board member, M12), `dueDate` (optional ISO date), `createdDate` (system) | Entered by the user in the task modal; ID and created date generated by the system | localStorage (MVP) → MariaDB `task` table (M12) | MVP |
+| DR-02 | Task AI context | `context` (long text, Markdown), `contextTool` (from a fixed list), `contextUpdatedAt` (system timestamp, set by the server when context or tool change) | Pasted by the user from AI tool conversations, bug logs or requirements; timestamp from the system | As DR-01 | MVP |
 | DR-03 | Stage definitions | Four fixed stages with IDs and labels (PRD §7) | Template PRD | Application constants | MVP |
 | DR-04 | Team member list | Display names used for assignment | MVP: fixed demo list (PRD §8). M12: taken from board members (DR-09) | Constants (MVP) → database (M12) | MVP |
 | DR-05 | Deliverable anchor | `id` (presentation \| demo \| report \| documentation), `label`, `url` (optional, must be a valid http/https URL) | Entered by the user | localStorage (MVP) → MariaDB `anchor` table (M12) | MVP |
@@ -267,10 +276,65 @@ Other M12 "secret sauce" ideas (e.g. collapsible columns, search) are added only
 | DR-07 | User | `id`, `name` (required), `email` (required, unique), `githubHandle` (optional), `passwordHash` (BCrypt; never sent to the client), `createdAt` | Registration form (client Q&A: name, email, GitHub account) | MariaDB `user` table | Non-MVP |
 | DR-08 | Board | `id`, `name` (required), `ownerId`, `createdAt` | Created by a logged-in user | MariaDB `board` table | Non-MVP |
 | DR-09 | Board membership | `boardId`, `userId`, `addedAt` (unique per board and user) | A board member adds a registered user | MariaDB `board_member` table | Non-MVP |
-| DR-10 | Session | `token` (random, unguessable), `userId`, `expiresAt` | Issued by the server at login | MariaDB / server memory | Non-MVP |
+| DR-10 | Session | `token` (random 256-bit, unguessable), `userId`, `createdAt`, `expiresAt` (7 days) | Issued by the server at login; sent to the browser only in an HttpOnly cookie | MariaDB `user_session` table | Non-MVP |
 | DR-11 | Board ownership of data | `boardId` on Task and Anchor | Set by the system from the current board | MariaDB foreign keys | Non-MVP |
 | DR-12 | Demo dataset | At least one demo board containing tasks in every column and due state, of both types, with context filled in, plus filled anchor links (and a demo user account from M12) | Written by the developer as seed data | Seed script / seed module | MVP |
 
+
+## 17. Implementation status (traceability)
+
+How each requirement is met in the prototype, so features can be traced back to requirements. "Where" names the part of the app a marker can look at.
+
+**Key:** ✅ implemented · 🔶 implemented, still to be verified · ⏳ planned before submission · ❌ not implemented (future work)
+
+### Functional
+
+| ID | Status | Where |
+|---|---|---|
+| FR-01, FR-02 | ✅ | Board with four columns and task counts |
+| FR-03, FR-04, FR-05 | ✅ | "+ New task" / click a card → task modal; Delete with confirmation |
+| FR-06 | ✅ | Status dropdown on every card and in the modal |
+| FR-07 | ✅ | Saved in MariaDB; survives reloads and works across browsers |
+| FR-08 | ✅ | Coloured stripe + icon + "Feature"/"Bug" badge |
+| FR-09, FR-10 | ✅ | Owner badge; "Hand off to…" dropdown with confirmation message |
+| FR-11, FR-12 | ✅ | Due chip with colour, icon and text; card tint |
+| FR-13 | ❌ | Colours live in one config (`src/lib/dueStatus.js`) ready for this, but there is no settings screen yet |
+| FR-14, FR-15, FR-16 | ✅ | "AI context" section in the task modal; time set by the server |
+| FR-17 | ✅ | "Copy" on each card and "Copy as prompt" in the modal |
+| FR-18, FR-19 | ✅ | Deliverables bar above the board |
+| FR-20 | ✅ | Demo data entered by the developer |
+| FR-21 | ✅ | Write / Split / Preview Markdown editor |
+| FR-22, FR-23 | ✅ | Log in / Create account screens; Log out in the header |
+| FR-24 | ✅ | Board switcher with New / Rename / Delete |
+| FR-25, FR-26 | ✅ | Members panel; assignee lists show board members only |
+| FR-27 | ✅ | Each board has its own deliverables |
+| FR-28 | ⏳ | Needs a hosted version with a demo login (see NFR-15) |
+| FR-29 | ✅ | Drag cards between columns |
+
+### Non-functional
+
+| ID | Status | Notes |
+|---|---|---|
+| NFR-01 | 🔶 | Built to WCAG 2.2 AA; run a Lighthouse / axe audit and record the result |
+| NFR-02, NFR-03 | ✅ | Contrast ratios measured (DESIGN.md §2); every colour cue has an icon and text |
+| NFR-04, NFR-05, NFR-06 | ✅ | Keyboard operation, dialog focus handling and announced messages checked during development |
+| NFR-07 | ✅ | Status dropdown is the non-drag alternative |
+| NFR-08 | ✅ | Only a 200 ms fade on messages, switched off with reduced motion |
+| NFR-09, NFR-10 | ✅ | DESIGN.md followed throughout; one-click copy |
+| NFR-11 | 🔶 | Not yet measured with 100 tasks |
+| NFR-12 | 🔶 | Tested in Chromium-based browsers (Chrome / Edge); check Firefox |
+| NFR-13, NFR-14 | ✅ | BCrypt hashes; every API route except login/register/health checks the session and board membership |
+| NFR-15 | ⏳ | Hosting to be set up before submission |
+| NFR-16 | ✅ | Script tags and `javascript:` links tested and not run |
+| NFR-17, NFR-18 | ✅ | Runs on the university laptop with local MariaDB; one instance per team |
+| NFR-19 | ✅ | All data access in `src/api.js` (the UI didn't change when storage moved to the server) |
+| NFR-20 | ✅ | Only name, email, optional GitHub username and a password hash are stored |
+| NFR-21 | ✅ | Days → months → years, with the exact date |
+
+### Data
+
+DR-01 to DR-12 are all stored as described in §16 (tables in `backend/src/main/resources/schema.sql`), except DR-06's *customised* colours, which depend on FR-13.
+
 ---
 
-*PRD version: hackathon-starter v1 · maintained by Prof. Dr. Ignacio Alvarez · requirements (§14–16) added by Archie*
+*PRD version: hackathon-starter v1 · maintained by Prof. Dr. Ignacio Alvarez · requirements (§14–16) and status (§17) added by Archie*

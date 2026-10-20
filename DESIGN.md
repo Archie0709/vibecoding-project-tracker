@@ -1,6 +1,6 @@
 # Vibecoding Project Tracker — Design
 
-**Status:** Filled in by Archie (Archie0709) for `design-done`. All colour pairs below were checked against WCAG 2.2 contrast ratios (results in §2).
+**Status:** Filled in by Archie (Archie0709) for `design-done`, and updated after M12 to match the built prototype. All colour pairs below were checked against WCAG 2.2 contrast ratios (results in §2).
 
 **Why this file exists.** This tracker is your tool. It should look like *your* tool — not a generic Kanban with default Tailwind blue. Twenty minutes of design decisions here will be visible on every screen for the next six weeks of Module 5.
 
@@ -107,8 +107,12 @@ Sizes (no text below 12 px):
 
 - **Cards:** `surface-card` on the `surface-page` background, 1 px `border-subtle` outline, 4 px left stripe in the task-type colour; a slightly lighter background on hover and focus, with no heavy shadows.
 - **Buttons:** primary = solid `brand-primary` fill with dark text, rounded-md, at least 36 px tall; secondary = transparent with a `border-strong` outline. Every button has a visible 2 px `brand-primary` focus ring with an offset (`focus-visible`).
-- **Modal:** centred, max-w-lg, `surface-raised` background, page dimmed with a black backdrop at 60% opacity; focus stays inside the modal and Esc closes it; the first field gets focus when it opens.
+- **Modal:** centred, max-w-lg (the task modal is wider, max-w-3xl, to fit the Markdown Split view; it scrolls if taller than the screen), `surface-raised` background, page dimmed with a black backdrop at 60% opacity; focus stays inside the modal and Esc closes it; the first field gets focus when it opens.
 - **Empty states:** dashed `border-subtle` box, muted text, encouraging, never sad.
+- **Badges and chips:** a Lucide icon plus a short text label in the matching colour. Due-date chips use an outline only (no fill), because a filled chip pushed overdue/done text below 4.5:1 on a hovered card.
+- **Forms (M12 login, register, board name, links):** visible labels above every field, hints and errors underneath and linked with `aria-describedby`, errors in `due-overdue` red text with the field outlined, and focus moved to the first problem on submit. Password fields have a Show/Hide button rather than a "confirm password" field.
+- **Markdown editor (M12):** a small Write / Split / Preview switch (radio group) above the text box, like GitHub's, so the preview never takes space unless wanted.
+- **Board bar and members (M12):** a native `<select>` switches boards (keyboard and screen-reader friendly, scales to many boards); Members opens a panel listing people with initials avatars, plus "Add a person".
 - **Drag affordance:** cards can be dragged between columns with a mouse (M12). A grip icon appears on hover and the cursor changes to a hand. While dragging, the card fades, other columns show a dashed teal outline, and the column under the pointer highlights. Dragging is never the only way to move a card: every card keeps its status dropdown, which works with a keyboard and screen readers (WCAG 2.2 SC 2.5.7).
 - **Motion:** a 200 ms fade only, and none when the user has `prefers-reduced-motion` set.
 
@@ -123,6 +127,11 @@ Short, calm, a little warm, written for someone tired at 11pm.
 | Toast after "Copy as Prompt Context" | "Copied. Paste it into your AI tool." |
 | Confirm-delete message | "Delete "{title}"? This can't be undone." |
 | Handoff toast (M7 `task-owner`) | "Handed off to {name}." |
+| Move toast | "Moved "{title}" to {column}." |
+| Wrong login (M12) | "Email or password is incorrect." |
+| Backend not running (M12) | "Can't reach the server. Check the backend is running, then try again." |
+| Delete board (M12) | "Delete "{name}"? Its tasks and deliverable links will be deleted for everyone on the board. This can't be undone." |
+| Drop zone while dragging (M12) | "Drop here" |
 
 ## 6. Logo / wordmark
 

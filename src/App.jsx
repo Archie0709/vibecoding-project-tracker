@@ -19,17 +19,14 @@ import { btnPrimary, btnSecondary } from './lib/ui';
 /**
  * Vibecoding Project Tracker.
  *
- * Structure:
- *   src/api.js              data layer: every read/write goes through the REST API (M12)
- *   src/hooks/useTasks.js   React state over the data layer
- *   src/lib/                constants, dates, seed data, shared UI classes
- *   src/components/         AnchorBoard, Board → Column → TaskCard, TaskModal, Modal, ConfirmDialog, Toast
- *   src/hooks/useAnchors.js deliverable links (M11)
- *   src/hooks/useAuth.jsx   who is logged in (12c)
- *   src/hooks/useBoards.js  the user's boards and which one is open (12d)
- *   src/hooks/useMembers.jsx the open board's members, shared via context (12e)
+ * Structure (see README.md for the full map):
+ *   src/api.js     the data layer: every read/write goes through the REST API
+ *   src/hooks/     useAuth (who is logged in), useBoards, useTasks, useMembers, useAnchors
+ *   src/lib/       constants, dates, due-date rules, prompt builder, Markdown helpers, shared UI classes
+ *   src/components AuthScreen, BoardBar, MembersPanel, AnchorBoard, Board → Column → TaskCard,
+ *                  TaskModal + MarkdownEditor, Modal, ConfirmDialog, Toast, LocalTasksBanner
  *
- * Core milestones M4–M11 complete. M12 (secret sauce) builds on this.
+ * Screens: login gate (12c) → header + board bar (12d) → BoardView for the open board.
  */
 export default function App() {
   return (

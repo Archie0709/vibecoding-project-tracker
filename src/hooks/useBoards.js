@@ -89,12 +89,7 @@ export function useBoards() {
     [boards, currentId, selectBoard],
   );
 
-  /** Keep a board's details (e.g. member count) in sync after changes made elsewhere. */
-  const patchBoard = useCallback((id, patch) => {
-    setBoards((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
-  }, []);
-
   const currentBoard = boards.find((b) => b.id === currentId) ?? null;
 
-  return { boards, currentBoard, loading, error, selectBoard, createBoard, renameBoard, deleteBoard, forgetBoard, patchBoard };
+  return { boards, currentBoard, loading, error, selectBoard, createBoard, renameBoard, deleteBoard, forgetBoard };
 }
