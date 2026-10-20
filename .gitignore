@@ -7,3 +7,7 @@ dist
 .idea
 .vscode
 *.log
+
+# Backend (Spring Boot)
+backend/target/
+backend/src/main/resources/application-local.properties
