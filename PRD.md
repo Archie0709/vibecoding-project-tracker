@@ -1,6 +1,6 @@
 # Vibecoding Project Tracker — PRD
 
-**Status:** Hackathon starter PRD · review and fill in the **`<TODO>`** sections before you tag `prd-done`.
+**Status:** Reviewed by Archie (Archie0709) for `prd-done`. Solo hackathon entry. Where this PRD departs from the starter's original wording, the change is marked **[Amended]** with the reason.
 
 ---
 
@@ -17,8 +17,11 @@ A spreadsheet doesn't solve this. A real project tool (Linear, Jira, Notion) is 
 
 - **Primary:** the team members, for the remaining weeks of the summer semester.
 - **Secondary:** future cohorts of vibecoders taking the same class.
+- **[Amended] Wider audience (from client Q&A):** small, self-managed software development teams (junior devs, senior devs, project managers) that self-host the tool for their own team.
 
 We are designing the tool we ourselves will use. The pitch demo is also our first real user test.
+
+**Accessibility is a first-class requirement** (client Q&A): every colour signal is paired with an icon or text label for colour-blind users, all colour pairs meet WCAG 2.2 AA contrast, and every action is keyboard-operable.
 
 ## 3. Product overview
 
@@ -31,7 +34,7 @@ Each task carries the prompt context that produced it, so any teammate can click
 
 ## 4. Primary user flow
 
-1. Open the Webapp. The board loads from local storage.
+1. Open the Webapp. The board loads from local storage (from M12: log in, pick a board, and it loads from the server).
 2. Click "+" to add a task. Fill in title, type, assignee, due date, prompt context.
 3. Move the task across columns as you work.
 4. When stuck, click "Copy as Prompt Context" on a task and paste it into Claude/ChatGPT/Cursor to continue.
@@ -68,6 +71,17 @@ Anchor = {
 }
 ```
 
+**[Amended] M12 extensions** (additive — the fields above are unchanged so M4–M11 work as specified):
+
+```js
+User   = { id, name, email, githubHandle, passwordHash }   // passwordHash is server-side only (BCrypt)
+Board  = { id, name, ownerId, memberIds: [userId] }        // a user can have many boards
+Task   += { boardId }                                       // assignee becomes a board member's user id
+Anchor += { boardId }                                       // deliverables are per board
+```
+
+`Task.description` and `Task.context` are rendered as Markdown from M12.
+
 ## 6. Tech stack
 
 | Layer | Choice | Why |
@@ -77,8 +91,12 @@ Anchor = {
 | State | React `useState` + a `useLocalStorage` hook | Simple, no library needed. |
 | Persistence | **localStorage** | Zero infra. Pick this. Do not switch to a backend mid-hackathon. |
 | Deploy | Vercel | One-click deploy from GitHub. |
+| **[Amended] Backend (M12)** | Java 17+ · Spring Boot 3 · Maven · Spring Data JPA | Strongest language for the developer; typed, well-documented, fast to scaffold with AI. |
+| **[Amended] Database (M12)** | MariaDB (local install, managed via IntelliJ) | Already available on the dev laptop; no Docker needed. |
+| **[Amended] Auth (M12)** | Email + password, BCrypt-hashed, session token | Client Q&A: "login would be ideal" so the tool isn't left exposed. |
+| **[Amended] Markdown (M12)** | `react-markdown` (no raw HTML) | Safe-by-default rendering of task fields. |
 
-> **Decision:** localStorage, not a shared backend. If you want a shared backend later, that's M14 — out of scope for the hackathon.
+> **Decision [Amended]:** M4–M11 are built exactly as specified, on localStorage, so each milestone ships quickly and independently. All data access goes through a single `src/api.js` layer from M4. In M12 that layer is switched from localStorage to the Spring Boot REST API, so the UI is not rewritten mid-hackathon. Deployment is not required: the app is demonstrated running locally (frontend on Vite, backend on Spring Boot, database on local MariaDB). Vercel cannot host the Java backend.
 
 ## 7. Stage names
 
@@ -91,33 +109,31 @@ Four columns, in this order, with these exact labels in the UI:
 
 ## 8. Team
 
-Fill these in before tagging `prd-done`:
+**[Amended] Solo entry** — one developer covers all three tracks.
 
 | Slot | Name | GitHub handle |
 |---|---|---|
-| Teammate A | `<TODO>` | `<TODO>` |
-| Teammate B | `<TODO>` | `<TODO>` |
-| Teammate C | `<TODO>` | `<TODO>` |
+| Developer (Tracks A, B, C) | Archie | Archie0709 |
 
-These three names become the **only** allowed values for `Task.assignee`. No auth — just a dropdown.
+For M7–M11 the assignee dropdown uses a small fixed demo team list (Archie plus placeholder teammates) so hand-off can be demonstrated. From M12, the assignee list is the board's members, drawn from real user accounts; every user can add any other user of the self-hosted instance to a board (all users are treated as admins — small, self-managed team).
 
 ## 9. Milestone ownership
 
-Fill in the owner column. Recommended default in **bold**; change if your team has different strengths.
+**[Amended]** Solo entry, so Archie owns every milestone. The suggested track letters are kept to show which concern each milestone belongs to.
 
 | # | Tag | Title | Suggested owner | Final owner |
 |---|---|---|---|---|
-| 3 | `design-done` | Design system + voice (DESIGN.md) | **B** | `<TODO>` |
-| 4 | `data-model` | Task model + board view | **A** | `<TODO>` |
-| 5 | `crud-modal` | Add / edit / delete modal | **A** | `<TODO>` |
-| 6 | `tag-style` | Feature / bug colors | **B** | `<TODO>` |
-| 7 | `task-owner` | Owner indicator + handoff | **A** | `<TODO>` |
-| 8 | `due-tint` | Due-date color tinting | **B** | `<TODO>` |
-| 9 | `context` | Context field on the task modal | **C** | `<TODO>` |
-| 10 | `copy-prompt` | "Copy as Prompt Context" button | **C** | `<TODO>` |
-| 11 | `anchors` | Deliverable Anchor Board | **B** | `<TODO>` |
-| 12 | `secret-sauce` | The one thing that makes it yours | **C / All** | `<TODO>` |
-| 13 | `pitch-ready` | Demo + pitch rehearsal | **All** | `<TODO>` |
+| 3 | `design-done` | Design system + voice (DESIGN.md) | **B** | Archie |
+| 4 | `data-model` | Task model + board view | **A** | Archie |
+| 5 | `crud-modal` | Add / edit / delete modal | **A** | Archie |
+| 6 | `tag-style` | Feature / bug colors | **B** | Archie |
+| 7 | `task-owner` | Owner indicator + handoff | **A** | Archie |
+| 8 | `due-tint` | Due-date color tinting | **B** | Archie |
+| 9 | `context` | Context field on the task modal | **C** | Archie |
+| 10 | `copy-prompt` | "Copy as Prompt Context" button | **C** | Archie |
+| 11 | `project-deliverables` | Deliverable Anchor Board | **B** | Archie |
+| 12 | `secret-sauce` | The one thing that makes it yours | **C / All** | Archie |
+| 13 | `pitch-ready` | Demo + pitch rehearsal | **All** | Archie |
 
 
 Track A owns the state model and task ownership. Track B owns the visuals (and design — M3 runs parallel to M2 so the team starts Phase 3 with the palette already chosen). Track C owns the differentiator features (M9 + M10 — the context field and the Copy-as-Prompt button) and usually leads on M12 secret-sauce. Put your strongest prompter on Track C.
@@ -143,26 +159,26 @@ Keep the Context field of each real task up to date as you work. By the end of t
 
 Fill in:
 
-- **Team name:** `<TODO>`
-- **Tagline (one sentence):** `<TODO>`
-- **Tracker URL after deploy:** `<TODO>` (Vercel will give it to you)
+- **Team name:** Archie (Archie0709) — solo entry, no separate team name
+- **Tagline (one sentence):** Track the task *and* the prompt that built it.
+- **Tracker URL after deploy:** Not deployed — demonstrated locally (see §6). Run instructions are in README.md.
 
 ## 12. Out of scope (do not build)
 
-- Authentication / accounts.
+- ~~Authentication / accounts.~~ **[Amended]** Moved into M12 scope: client Q&A said login would be ideal.
 - Real GitHub integration.
-- A real backend / shared database.
+- ~~A real backend / shared database.~~ **[Amended]** Moved into M12 scope: required for accounts and shared boards. Built only after M1–M11 are done.
 - Mobile responsive — desktop only is fine.
-- Multi-team support.
+- Multi-team support. (Multiple **boards** for one team are in scope for M12; multiple separate teams/organisations are not.)
 - Real-time collaboration.
 
 ## 13. Definition of done
 
 The hackathon is "done" when all 13 milestone tags are pushed to your repo and visible on the dashboard. The pitch is "done" when:
 
-- The board loads on Vercel without errors.
+- The board loads locally without errors (frontend + backend + MariaDB). **[Amended]** — no Vercel deploy.
 - The "Copy as Prompt Context" demo works on stage.
-- 5 min pitch is rehearsed.
+- **[Amended]** No live pitch: a short video/screenshots and a ~30-second written description are prepared instead.
 
 ---
 
