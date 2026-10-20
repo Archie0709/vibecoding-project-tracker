@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { LogOut, ServerCrash } from 'lucide-react';
 import AnchorBoard from './components/AnchorBoard';
 import AuthScreen from './components/AuthScreen';
+import BoardBar from './components/BoardBar';
 import Board from './components/Board';
 import TaskModal from './components/TaskModal';
 import { ToastProvider, useToast } from './components/Toast';
 import { useAnchors } from './hooks/useAnchors';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { useBoards } from './hooks/useBoards';
 import { useTasks } from './hooks/useTasks';
 import { STAGES } from './lib/constants';
 import { btnPrimary, btnSecondary } from './lib/ui';
@@ -21,6 +23,7 @@ import { btnPrimary, btnSecondary } from './lib/ui';
  *   src/components/         AnchorBoard, Board → Column → TaskCard, TaskModal, Modal, ConfirmDialog, Toast
  *   src/hooks/useAnchors.js deliverable links (M11)
  *   src/hooks/useAuth.jsx   who is logged in (12c)
+ *   src/hooks/useBoards.js  the user's boards and which one is open (12d)
  *
  * Core milestones M4–M11 complete. M12 (secret sauce) builds on this.
  */
@@ -68,8 +71,89 @@ function Gate() {
 
 function Tracker() {
   const { user, logout } = useAuth();
-  const { tasks, loading, error, addTask, editTask, removeTask } = useTasks();
-  const { anchors, saveAnchor } = useAnchors();
+  const boards = useBoards();
+  const showToast = useToast();
+
+  async function handleLogout() {
+    await logout();
+    showToast('Logged out.');
+  }
+
+  return (
+    <div className="min-h-screen p-6">
+      <a
+        href="#board"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-brand-primary focus:px-3 focus:py-2 focus:text-surface-page"
+      >
+        Skip to board
+      </a>
+
+      <header className="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold text-text-primary">
+            <span aria-hidden="true" className="text-brand-primary">▍</span>
+            Vibecoding Project Tracker
+          </h1>
+          <p className="text-sm text-text-muted">
+            Track the task <em>and</em> the prompt that built it.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-text-muted">
+            Signed in as <span className="font-medium text-text-primary">{user.name}</span>
+          </p>
+          <button type="button" className={btnSecondary} onClick={handleLogout}>
+            <LogOut aria-hidden="true" className="h-4 w-4" />
+            Log out
+          </button>
+        </div>
+      </header>
+
+      {boards.loading && <p className="text-text-muted">Loading boards…</p>}
+      {boards.error && (
+        <p role="alert" className="text-due-overdue">Couldn&apos;t load boards: {boards.error.message}</p>
+      )}
+
+      {!boards.loading && !boards.error && (
+        <>
+          <BoardBar
+            boards={boards.boards}
+            currentBoard={boards.currentBoard}
+            onSelect={boards.selectBoard}
+            onCreate={boards.createBoard}
+            onRename={boards.renameBoard}
+            onDelete={boards.deleteBoard}
+          />
+          {boards.currentBoard ? (
+            // key: switching boards remounts the view, so tasks, links and modals reset cleanly.
+            <BoardView key={boards.currentBoard.id} board={boards.currentBoard} />
+          ) : (
+            <NoBoards onCreate={() => document.getElementById('new-board-button')?.click()} />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function NoBoards({ onCreate }) {
+  return (
+    <main id="board" tabIndex={-1} className="focus:outline-none">
+      <div className="rounded-lg border border-dashed border-border-subtle p-10 text-center">
+        <h2 className="text-lg font-semibold">No boards yet</h2>
+        <p className="mt-1 text-sm text-text-muted">Create a board to start tracking tasks and prompts.</p>
+        <button type="button" className={`${btnPrimary} mt-4`} onClick={onCreate}>
+          Create a board
+        </button>
+      </div>
+    </main>
+  );
+}
+
+/** Everything that belongs to one board: its deliverables, tasks and the task modal. */
+function BoardView({ board }) {
+  const { tasks, loading, error, addTask, editTask, removeTask } = useTasks(board.id);
+  const { anchors, saveAnchor } = useAnchors(board.id);
   const showToast = useToast();
 
   // Modal state: closed, creating (task = null) or editing (task = the task).
@@ -77,6 +161,10 @@ function Tracker() {
   const openCreate = () => setModal({ open: true, task: null });
   const openEdit = (task) => setModal({ open: true, task });
   const closeModal = () => setModal((m) => ({ ...m, open: false }));
+
+  useEffect(() => {
+    document.title = `${board.name} · Vibecoding Project Tracker`;
+  }, [board.name]);
 
   async function handleSave(values) {
     if (modal.task) {
@@ -106,64 +194,31 @@ function Tracker() {
     showToast(`Handed off to ${name}.`);
   }
 
-  useEffect(() => {
-    document.title = 'Board · Vibecoding Project Tracker';
-  }, []);
-
-  async function handleLogout() {
-    await logout();
-    showToast('Logged out.');
-  }
-
   // Everything a card can do, passed down Board → Column → TaskCard as one object.
   const cardActions = { open: openEdit, move: handleMove, handOff: handleHandOff };
 
   return (
-    <div className="min-h-screen p-6">
-      <a
-        href="#board"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-brand-primary focus:px-3 focus:py-2 focus:text-surface-page"
-      >
-        Skip to board
-      </a>
+    <>
+      {/* M11: pinned deliverables, always visible above the board (FR-18, FR-19). */}
+      <AnchorBoard anchors={anchors} onSave={saveAnchor} />
 
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold text-text-primary">
-            <span aria-hidden="true" className="text-brand-primary">▍</span>
-            Vibecoding Project Tracker
-          </h1>
-          <p className="text-sm text-text-muted">
-            Track the task <em>and</em> the prompt that built it.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <p className="text-sm text-text-muted">
-            Signed in as <span className="font-medium text-text-primary">{user.name}</span>
-          </p>
-          <button type="button" className={btnSecondary} onClick={handleLogout}>
-            <LogOut aria-hidden="true" className="h-4 w-4" />
-            Log out
-          </button>
+      <main id="board" tabIndex={-1} aria-labelledby="board-heading" className="focus:outline-none">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 id="board-heading" className="text-lg font-semibold text-text-primary">
+            {board.name}
+          </h2>
           <button id="new-task-button" type="button" className={btnPrimary} onClick={openCreate}>
             + New task
           </button>
         </div>
-      </header>
 
-      {/* M11: pinned deliverables, always visible above the board (FR-18, FR-19). */}
-      <AnchorBoard anchors={anchors} onSave={saveAnchor} />
-
-      <main id="board" tabIndex={-1} className="focus:outline-none">
         {loading && <p className="text-text-muted">Loading tasks…</p>}
         {error && (
           <p role="alert" className="text-due-overdue">
             Couldn&apos;t load tasks: {error.message}
           </p>
         )}
-        {!loading && !error && (
-          <Board tasks={tasks} actions={cardActions} />
-        )}
+        {!loading && !error && <Board tasks={tasks} actions={cardActions} />}
       </main>
 
       <TaskModal
@@ -173,6 +228,6 @@ function Tracker() {
         onSave={handleSave}
         onDelete={handleDelete}
       />
-    </div>
+    </>
   );
 }

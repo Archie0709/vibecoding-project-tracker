@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.vibetracker.auth.AuthDtos.LoginRequest;
 import com.vibetracker.auth.AuthDtos.RegisterRequest;
+import com.vibetracker.board.BoardService;
 import com.vibetracker.common.ApiException;
 import com.vibetracker.model.User;
 import com.vibetracker.model.UserSession;
@@ -35,6 +36,7 @@ public class AuthService {
 
     private final UserRepository users;
     private final UserSessionRepository sessions;
+    private final BoardService boardService;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final SecureRandom random = new SecureRandom();
     private final Duration sessionLength;
@@ -43,9 +45,11 @@ public class AuthService {
 
     public AuthService(UserRepository users,
                        UserSessionRepository sessions,
+                       BoardService boardService,
                        @Value("${app.auth.session-days:7}") long sessionDays) {
         this.users = users;
         this.sessions = sessions;
+        this.boardService = boardService;
         this.sessionLength = Duration.ofDays(sessionDays);
         this.dummyHash = passwordEncoder.encode("not-a-real-password");
     }
@@ -66,7 +70,12 @@ public class AuthService {
         String github = request.githubHandle() == null ? "" : request.githubHandle().trim();
         user.setGithubHandle(github.isEmpty() ? null : github);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
-        return users.save(user);
+        User saved = users.save(user);
+
+        // 12d: everyone starts with a board, so the app is never empty after signing up.
+        String firstName = saved.getName().split("\\s+")[0];
+        boardService.createBoard(saved, firstName + "'s board");
+        return saved;
     }
 
     @Transactional(readOnly = true)

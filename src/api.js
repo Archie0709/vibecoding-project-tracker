@@ -1,16 +1,18 @@
 /**
  * Data layer — the ONLY place the app reads or writes data.
  *
- * M4–M11: tasks and anchors are backed by localStorage.
+ * M4–M11: tasks and anchors were backed by localStorage.
  * 12c:    accounts (register / log in / log out) use the Spring Boot REST API.
- * 12f:    tasks and anchors switch to the REST API too. The functions are already
- *         async, so components using them won't need to change.
+ * 12d:    boards and deliverable anchors use the REST API; tasks are kept per board
+ *         in localStorage for now.
+ * 12f:    tasks switch to the REST API too. The functions are already async and
+ *         take a boardId, so components using them won't need to change.
  */
-import { seedAnchors, seedTasks } from './lib/seed';
 import { toISODate } from './lib/dates';
 
-const TASKS_KEY = 'vibetracker.tasks';
-const ANCHORS_KEY = 'vibetracker.anchors';
+// Tasks stay in this browser until 12f, stored per board.
+const tasksKey = (boardId) => `vibetracker.tasks.${boardId}`;
+const LEGACY_TASKS_KEY = 'vibetracker.tasks'; // M4–M11 single-board storage
 
 function read(key, fallback) {
   try {
@@ -103,19 +105,53 @@ export function logout() {
   return request('/auth/logout', { method: 'POST' });
 }
 
-// ---- Tasks ---------------------------------------------------------------
+// ---- Boards (12d) ----------------------------------------------------------
 
-export async function listTasks() {
-  let tasks = read(TASKS_KEY, null);
+export function listBoards() {
+  return request('/boards');
+}
+
+export function createBoard(name) {
+  return request('/boards', { method: 'POST', body: { name } });
+}
+
+export function renameBoard(boardId, name) {
+  return request(`/boards/${boardId}`, { method: 'PATCH', body: { name } });
+}
+
+export function deleteBoard(boardId) {
+  return request(`/boards/${boardId}`, { method: 'DELETE' });
+}
+
+// ---- Deliverable anchors (M11, per board from 12d) ------------------------
+
+export function listAnchors(boardId) {
+  return request(`/boards/${boardId}/anchors`);
+}
+
+export function updateAnchor(boardId, slot, { url }) {
+  return request(`/boards/${boardId}/anchors/${slot}`, { method: 'PUT', body: { url } });
+}
+
+// ---- Tasks (localStorage per board until 12f) ------------------------------
+
+export async function listTasks(boardId) {
+  let tasks = read(tasksKey(boardId), null);
   if (tasks == null) {
-    tasks = seedTasks();
-    write(TASKS_KEY, tasks);
+    // One-off move: the first board opened inherits the tasks from the M4–M11 single board.
+    tasks = read(LEGACY_TASKS_KEY, []);
+    write(tasksKey(boardId), tasks);
+    try {
+      window.localStorage.removeItem(LEGACY_TASKS_KEY);
+    } catch {
+      /* ignore */
+    }
   }
   return tasks;
 }
 
-export async function createTask(input) {
-  const tasks = await listTasks();
+export async function createTask(boardId, input) {
+  const tasks = await listTasks(boardId);
   const task = {
     title: '',
     description: '',
@@ -130,12 +166,12 @@ export async function createTask(input) {
     id: newId(),
     createdDate: toISODate(),
   };
-  write(TASKS_KEY, [...tasks, task]);
+  write(tasksKey(boardId), [...tasks, task]);
   return task;
 }
 
-export async function updateTask(id, patch) {
-  const tasks = await listTasks();
+export async function updateTask(boardId, id, patch) {
+  const tasks = await listTasks(boardId);
   let updated = null;
   const next = tasks.map((t) => {
     if (t.id !== id) return t;
@@ -143,35 +179,11 @@ export async function updateTask(id, patch) {
     return updated;
   });
   if (!updated) throw new Error(`Task ${id} not found`);
-  write(TASKS_KEY, next);
+  write(tasksKey(boardId), next);
   return updated;
 }
 
-export async function deleteTask(id) {
-  const tasks = await listTasks();
-  write(TASKS_KEY, tasks.filter((t) => t.id !== id));
-}
-
-// ---- Deliverable anchors (M11) -------------------------------------------
-
-export async function listAnchors() {
-  let anchors = read(ANCHORS_KEY, null);
-  if (anchors == null) {
-    anchors = seedAnchors();
-    write(ANCHORS_KEY, anchors);
-  }
-  return anchors;
-}
-
-export async function updateAnchor(id, patch) {
-  const anchors = await listAnchors();
-  let updated = null;
-  const next = anchors.map((a) => {
-    if (a.id !== id) return a;
-    updated = { ...a, ...patch, id: a.id };
-    return updated;
-  });
-  if (!updated) throw new Error(`Anchor ${id} not found`);
-  write(ANCHORS_KEY, next);
-  return updated;
+export async function deleteTask(boardId, id) {
+  const tasks = await listTasks(boardId);
+  write(tasksKey(boardId), tasks.filter((t) => t.id !== id));
 }

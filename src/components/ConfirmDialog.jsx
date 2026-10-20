@@ -6,7 +6,7 @@ import { btnDangerSolid, btnSecondary } from '../lib/ui';
  * Confirmation for destructive actions (Nielsen heuristic: error prevention).
  * Focus starts on Cancel — the safe choice — per the WAI-ARIA alertdialog pattern.
  */
-export default function ConfirmDialog({ open, title, message, confirmLabel = 'Delete', onConfirm, onCancel }) {
+export default function ConfirmDialog({ open, title, message, confirmLabel = 'Delete', onConfirm, onCancel, fallbackFocusId }) {
   const titleId = useId();
   const messageId = useId();
 
@@ -18,6 +18,7 @@ export default function ConfirmDialog({ open, title, message, confirmLabel = 'De
       labelledBy={titleId}
       describedBy={messageId}
       className="max-w-sm"
+      fallbackFocusId={fallbackFocusId}
     >
       <div className="p-5">
         <h2 id={titleId} className="text-base font-semibold">{title}</h2>
