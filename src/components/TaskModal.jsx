@@ -2,6 +2,7 @@ import { useId, useRef, useState } from 'react';
 import Modal from './Modal';
 import ConfirmDialog from './ConfirmDialog';
 import { STAGES, TASK_TYPES, TEAM } from '../lib/constants';
+import { typeStyle } from '../lib/taskTypes';
 import { btnDanger, btnPrimary, btnSecondary, inputClass, labelClass } from '../lib/ui';
 
 const TITLE_MAX = 120;
@@ -40,7 +41,6 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
     title: useId(),
     titleError: useId(),
     description: useId(),
-    type: useId(),
     status: useId(),
     assignee: useId(),
     dueDate: useId(),
@@ -119,16 +119,36 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor={ids.type} className={labelClass}>Type</label>
-              <select id={ids.type} value={values.type} onChange={set('type')} className={inputClass}>
-                {TASK_TYPES.map((t) => (
-                  <option key={t.id} value={t.id}>{t.label}</option>
-                ))}
-              </select>
+          <fieldset>
+            <legend className={labelClass}>Type</legend>
+            <div className="flex gap-2">
+              {TASK_TYPES.map((t) => {
+                const { Icon, text, ring, tint } = typeStyle(t.id);
+                const checked = values.type === t.id;
+                return (
+                  <label
+                    key={t.id}
+                    className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-primary ${
+                      checked ? `border-transparent ring-2 ${ring} ${tint} ${text} font-medium` : 'border-border-strong text-text-primary hover:bg-surface-card'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="task-type"
+                      value={t.id}
+                      checked={checked}
+                      onChange={set('type')}
+                      className="sr-only"
+                    />
+                    <Icon aria-hidden="true" className="h-4 w-4" />
+                    {t.label}
+                  </label>
+                );
+              })}
             </div>
+          </fieldset>
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor={ids.status} className={labelClass}>Status</label>
               <select id={ids.status} value={values.status} onChange={set('status')} className={inputClass}>

@@ -1,6 +1,8 @@
 import { useId } from 'react';
 import { STAGES } from '../lib/constants';
 import { formatShortDate } from '../lib/dates';
+import { typeStyle } from '../lib/taskTypes';
+import TypeBadge from './TypeBadge';
 
 /**
  * A single task on the board.
@@ -8,14 +10,15 @@ import { formatShortDate } from '../lib/dates';
  *   title, stretched over the card, so it works with keyboard and screen readers.
  * - The status dropdown moves the task between columns without dragging (FR-06,
  *   WCAG 2.2 SC 2.5.7 Dragging Movements).
- * Styling for type (M6) and due date (M8) comes later.
+ * - M6: a 4px left stripe in the type colour plus an icon + label badge.
+ * Styling for due date (M8) comes later.
  */
 export default function TaskCard({ task, onOpen, onMove }) {
   const statusId = useId();
-  const typeLabel = task.type === 'bug' ? 'Bug' : 'Feature';
+  const { stripe } = typeStyle(task.type);
 
   return (
-    <article className="relative rounded-md border border-border-subtle bg-surface-card p-3 transition-colors hover:bg-surface-raised has-[.card-open:focus-visible]:outline has-[.card-open:focus-visible]:outline-2 has-[.card-open:focus-visible]:outline-offset-2 has-[.card-open:focus-visible]:outline-brand-primary">
+    <article className={`relative rounded-md border border-l-4 border-border-subtle ${stripe} bg-surface-card p-3 transition-colors hover:bg-surface-raised has-[.card-open:focus-visible]:outline has-[.card-open:focus-visible]:outline-2 has-[.card-open:focus-visible]:outline-offset-2 has-[.card-open:focus-visible]:outline-brand-primary`}>
       <h3 className="text-sm font-medium text-text-primary">
         <button
           type="button"
@@ -34,7 +37,9 @@ export default function TaskCard({ task, onOpen, onMove }) {
       <dl className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-muted">
         <div>
           <dt className="sr-only">Type</dt>
-          <dd className="font-mono">{typeLabel}</dd>
+          <dd>
+            <TypeBadge type={task.type} />
+          </dd>
         </div>
         {task.assignee && (
           <div>
