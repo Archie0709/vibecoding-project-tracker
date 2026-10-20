@@ -1,9 +1,10 @@
 import { useId } from 'react';
 import { STAGES, TEAM } from '../lib/constants';
-import { formatShortDate } from '../lib/dates';
+import { getDueState } from '../lib/dueStatus';
 import { typeStyle } from '../lib/taskTypes';
 import { focusRing } from '../lib/ui';
 import AssigneeBadge from './AssigneeBadge';
+import DueBadge from './DueBadge';
 import TypeBadge from './TypeBadge';
 
 const cardSelect = `rounded border border-border-strong bg-surface-page px-2 py-1 text-xs text-text-primary ${focusRing}`;
@@ -16,7 +17,7 @@ const cardSelect = `rounded border border-border-strong bg-surface-page px-2 py-
  *   WCAG 2.2 SC 2.5.7 Dragging Movements).
  * - M6: a 4px left stripe in the type colour plus an icon + label badge.
  * - M7: assignee badge + "Hand off to…" dropdown (FR-09, FR-10).
- * Styling for due date (M8) comes later.
+ * - M8: due-state chip (icon + text) and a faint background tint on the card (FR-11, FR-12).
  *
  * `actions` = { open(task), move(task, status), handOff(task, name) }
  */
@@ -24,10 +25,11 @@ export default function TaskCard({ task, actions }) {
   const statusId = useId();
   const handOffId = useId();
   const { stripe } = typeStyle(task.type);
+  const due = getDueState(task);
   const handOffOptions = TEAM.filter((name) => name !== task.assignee);
 
   return (
-    <article className={`relative rounded-md border border-l-4 border-border-subtle ${stripe} bg-surface-card p-3 transition-colors hover:bg-surface-raised has-[.card-open:focus-visible]:outline has-[.card-open:focus-visible]:outline-2 has-[.card-open:focus-visible]:outline-offset-2 has-[.card-open:focus-visible]:outline-brand-primary`}>
+    <article className={`relative rounded-md border border-l-4 border-border-subtle ${stripe} bg-surface-card ${due?.card ?? ''} p-3 transition-colors hover:bg-surface-raised has-[.card-open:focus-visible]:outline has-[.card-open:focus-visible]:outline-2 has-[.card-open:focus-visible]:outline-offset-2 has-[.card-open:focus-visible]:outline-brand-primary`}>
       <h3 className="text-sm font-medium text-text-primary">
         <button
           type="button"
@@ -56,11 +58,11 @@ export default function TaskCard({ task, actions }) {
             <AssigneeBadge name={task.assignee} />
           </dd>
         </div>
-        {task.dueDate && (
+        {due && (
           <div>
-            <dt className="sr-only">Due</dt>
+            <dt className="sr-only">Due date</dt>
             <dd>
-              <time dateTime={task.dueDate}>Due {formatShortDate(task.dueDate)}</time>
+              <DueBadge state={due} dueDate={task.dueDate} />
             </dd>
           </div>
         )}

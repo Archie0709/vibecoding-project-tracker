@@ -251,6 +251,7 @@ Further M12 "secret sauce" features (e.g. drag and drop, collapsible columns, se
 | NFR-18 | Deployability | The software shall be self-hostable by a single team, so that all users of an instance belong to that team. | Non-MVP | DG, CQ |
 | NFR-19 | Maintainability | All data access shall go through one data-layer module (`src/api.js`), so the storage can change without changing the UI. | MVP | DG |
 | NFR-20 | Privacy | Only the personal data needed for the features shall be collected (name, email, GitHub handle). | Non-MVP | CQ (user data), inferred |
+| NFR-21 | Usability (readability) | Due-date labels shall stay quick to read at any distance: up to 30 days shown in days, then rounded to months (31–45 days = "1 month"), and from 12 months in years. The exact date is always shown alongside, and it includes the year when that isn't the current year. | MVP | Developer testing (long-running solo projects) |
 
 ## 16. Data requirements
 

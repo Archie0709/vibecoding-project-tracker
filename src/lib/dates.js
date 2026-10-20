@@ -21,9 +21,27 @@ export function parseISODate(iso) {
   return new Date(y, m - 1, d);
 }
 
-/** e.g. "21 Oct" */
-export function formatShortDate(iso) {
+/** e.g. "21 Oct", or "14 Feb 2027" when the date isn't in the current year. */
+export function formatShortDate(iso, today = new Date()) {
   const date = parseISODate(iso);
   if (!date) return '';
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const options = { day: 'numeric', month: 'short' };
+  if (date.getFullYear() !== today.getFullYear()) options.year = 'numeric';
+  return date.toLocaleDateString('en-GB', options);
+}
+
+/**
+ * Human-friendly length of time for a number of days (NFR-21):
+ *   up to 30 days  → "N days"
+ *   up to 12 months → "N months" (31–45 days reads as "1 month")
+ *   beyond that    → "N years"
+ * The exact date is always shown alongside, so rounding never hides precision.
+ */
+export function formatDuration(days) {
+  const n = Math.abs(days);
+  const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
+  if (n <= 30) return plural(n, 'day');
+  const months = Math.max(1, Math.round(n / 30.44));
+  if (months < 12) return plural(months, 'month');
+  return plural(Math.max(1, Math.round(n / 365.25)), 'year');
 }
