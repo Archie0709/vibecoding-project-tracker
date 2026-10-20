@@ -16,7 +16,6 @@ import { btnPrimary } from './lib/ui';
  *   src/components/         Board → Column → TaskCard, TaskModal, Modal, ConfirmDialog, Toast
  *
  * Remaining milestone hooks:
- *   - M10 copy-prompt   : "Copy as Prompt Context" button.
  *   - M11 anchors       : Deliverable Anchor Board above the Kanban.
  */
 export default function App() {

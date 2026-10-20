@@ -5,6 +5,7 @@ import { getDueState } from '../lib/dueStatus';
 import { typeStyle } from '../lib/taskTypes';
 import { focusRing } from '../lib/ui';
 import AssigneeBadge from './AssigneeBadge';
+import CopyPromptButton from './CopyPromptButton';
 import DueBadge from './DueBadge';
 import TypeBadge from './TypeBadge';
 
@@ -20,6 +21,7 @@ const cardSelect = `rounded border border-border-strong bg-surface-page px-2 py-
  * - M7: assignee badge + "Hand off to…" dropdown (FR-09, FR-10).
  * - M8: due-state chip (icon + text) and a faint background tint on the card (FR-11, FR-12).
  * - M9: a "Context" marker when the task has AI context, naming the tool if recorded.
+ * - M10: one-click "Copy" button that copies the task + context as a Markdown prompt.
  *
  * `actions` = { open(task), move(task, status), handOff(task, name) }
  */
@@ -113,6 +115,10 @@ export default function TaskCard({ task, actions }) {
               <option key={name} value={name}>{name}</option>
             ))}
           </select>
+        </div>
+
+        <div className="ml-auto">
+          <CopyPromptButton task={task} />
         </div>
       </div>
     </article>

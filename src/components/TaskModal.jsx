@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from 'react';
 import Modal from './Modal';
 import ConfirmDialog from './ConfirmDialog';
+import CopyPromptButton from './CopyPromptButton';
 import { AI_TOOLS, STAGES, TASK_TYPES, TEAM } from '../lib/constants';
 import { formatTimestamp } from '../lib/dates';
 import { typeStyle } from '../lib/taskTypes';
@@ -247,12 +248,23 @@ function TaskForm({ headingId, task, onClose, onSave, onDelete }) {
         </div>
 
         <div className="flex items-center justify-between gap-2 border-t border-border-subtle px-5 py-4">
-          <div>
+          <div className="flex gap-2">
             {isEdit && (
               <button type="button" className={btnDanger} onClick={() => setConfirmingDelete(true)}>
                 Delete
               </button>
             )}
+            {/* Copies what is currently in the form, including unsaved edits. */}
+            <CopyPromptButton
+              variant="modal"
+              task={{
+                ...task,
+                ...values,
+                title: values.title.trim() || 'Untitled task',
+                dueDate: values.dueDate || null,
+                contextTool: values.contextTool || null,
+              }}
+            />
           </div>
           <div className="flex gap-2">
             <button type="button" className={btnSecondary} onClick={onClose}>
