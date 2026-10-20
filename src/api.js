@@ -6,10 +6,11 @@
  *         Spring Boot REST API. They are already async, so components using
  *         them won't need to change.
  */
-import { seedTasks } from './lib/seed';
+import { seedAnchors, seedTasks } from './lib/seed';
 import { toISODate } from './lib/dates';
 
 const TASKS_KEY = 'vibetracker.tasks';
+const ANCHORS_KEY = 'vibetracker.anchors';
 
 function read(key, fallback) {
   try {
@@ -79,4 +80,28 @@ export async function updateTask(id, patch) {
 export async function deleteTask(id) {
   const tasks = await listTasks();
   write(TASKS_KEY, tasks.filter((t) => t.id !== id));
+}
+
+// ---- Deliverable anchors (M11) -------------------------------------------
+
+export async function listAnchors() {
+  let anchors = read(ANCHORS_KEY, null);
+  if (anchors == null) {
+    anchors = seedAnchors();
+    write(ANCHORS_KEY, anchors);
+  }
+  return anchors;
+}
+
+export async function updateAnchor(id, patch) {
+  const anchors = await listAnchors();
+  let updated = null;
+  const next = anchors.map((a) => {
+    if (a.id !== id) return a;
+    updated = { ...a, ...patch, id: a.id };
+    return updated;
+  });
+  if (!updated) throw new Error(`Anchor ${id} not found`);
+  write(ANCHORS_KEY, next);
+  return updated;
 }

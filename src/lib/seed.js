@@ -61,3 +61,13 @@ export function seedTasks() {
     },
   ];
 }
+
+// The four pinned deliverable slots (PRD §5 Anchor). Links start empty.
+export function seedAnchors() {
+  return [
+    { id: 'presentation',  label: 'Presentation',  url: null },
+    { id: 'demo',          label: 'Demo',          url: null },
+    { id: 'report',        label: 'Report',        url: null },
+    { id: 'documentation', label: 'Documentation', url: null },
+  ];
+}

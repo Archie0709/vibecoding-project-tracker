@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import AnchorBoard from './components/AnchorBoard';
 import Board from './components/Board';
 import TaskModal from './components/TaskModal';
 import { ToastProvider, useToast } from './components/Toast';
+import { useAnchors } from './hooks/useAnchors';
 import { useTasks } from './hooks/useTasks';
 import { STAGES } from './lib/constants';
 import { btnPrimary } from './lib/ui';
@@ -13,10 +15,10 @@ import { btnPrimary } from './lib/ui';
  *   src/api.js              data layer (localStorage now, REST API in M12)
  *   src/hooks/useTasks.js   React state over the data layer
  *   src/lib/                constants, dates, seed data, shared UI classes
- *   src/components/         Board → Column → TaskCard, TaskModal, Modal, ConfirmDialog, Toast
+ *   src/components/         AnchorBoard, Board → Column → TaskCard, TaskModal, Modal, ConfirmDialog, Toast
+ *   src/hooks/useAnchors.js deliverable links (M11)
  *
- * Remaining milestone hooks:
- *   - M11 anchors       : Deliverable Anchor Board above the Kanban.
+ * Core milestones M4–M11 complete. M12 (secret sauce) builds on this.
  */
 export default function App() {
   return (
@@ -28,6 +30,7 @@ export default function App() {
 
 function Tracker() {
   const { tasks, loading, error, addTask, editTask, removeTask } = useTasks();
+  const { anchors, saveAnchor } = useAnchors();
   const showToast = useToast();
 
   // Modal state: closed, creating (task = null) or editing (task = the task).
@@ -91,7 +94,8 @@ function Tracker() {
         </button>
       </header>
 
-      {/* TODO M11 anchors: Anchor Board goes here, above the board. */}
+      {/* M11: pinned deliverables, always visible above the board (FR-18, FR-19). */}
+      <AnchorBoard anchors={anchors} onSave={saveAnchor} />
 
       <main id="board" tabIndex={-1} className="focus:outline-none">
         {loading && <p className="text-text-muted">Loading tasks…</p>}
