@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { LogOut, ServerCrash } from 'lucide-react';
 import AnchorBoard from './components/AnchorBoard';
+import AuthScreen from './components/AuthScreen';
 import Board from './components/Board';
 import TaskModal from './components/TaskModal';
 import { ToastProvider, useToast } from './components/Toast';
 import { useAnchors } from './hooks/useAnchors';
+import { AuthProvider, useAuth } from './hooks/useAuth';
 import { useTasks } from './hooks/useTasks';
 import { STAGES } from './lib/constants';
-import { btnPrimary } from './lib/ui';
+import { btnPrimary, btnSecondary } from './lib/ui';
 
 /**
  * Vibecoding Project Tracker.
@@ -17,18 +20,54 @@ import { btnPrimary } from './lib/ui';
  *   src/lib/                constants, dates, seed data, shared UI classes
  *   src/components/         AnchorBoard, Board → Column → TaskCard, TaskModal, Modal, ConfirmDialog, Toast
  *   src/hooks/useAnchors.js deliverable links (M11)
+ *   src/hooks/useAuth.jsx   who is logged in (12c)
  *
  * Core milestones M4–M11 complete. M12 (secret sauce) builds on this.
  */
 export default function App() {
   return (
     <ToastProvider>
-      <Tracker />
+      <AuthProvider>
+        <Gate />
+      </AuthProvider>
     </ToastProvider>
   );
 }
 
+/** 12c: shows the login screen until someone is logged in (NFR-14). */
+function Gate() {
+  const auth = useAuth();
+
+  if (auth.status === 'loading') {
+    return (
+      <p role="status" className="flex min-h-screen items-center justify-center text-text-muted">
+        Loading…
+      </p>
+    );
+  }
+
+  if (auth.status === 'error') {
+    return (
+      <main className="flex min-h-screen items-center justify-center p-6">
+        <div role="alert" className="max-w-md rounded-lg bg-surface-card p-6 text-center ring-1 ring-border-subtle">
+          <ServerCrash aria-hidden="true" className="mx-auto h-8 w-8 text-due-overdue" />
+          <h1 className="mt-3 text-lg font-semibold">Can&apos;t reach the server</h1>
+          <p className="mt-1 text-sm text-text-muted">{auth.error?.message}</p>
+          <button type="button" className={`${btnPrimary} mt-4`} onClick={auth.refresh}>
+            Try again
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (auth.status === 'anonymous') return <AuthScreen />;
+
+  return <Tracker />;
+}
+
 function Tracker() {
+  const { user, logout } = useAuth();
   const { tasks, loading, error, addTask, editTask, removeTask } = useTasks();
   const { anchors, saveAnchor } = useAnchors();
   const showToast = useToast();
@@ -67,6 +106,15 @@ function Tracker() {
     showToast(`Handed off to ${name}.`);
   }
 
+  useEffect(() => {
+    document.title = 'Board · Vibecoding Project Tracker';
+  }, []);
+
+  async function handleLogout() {
+    await logout();
+    showToast('Logged out.');
+  }
+
   // Everything a card can do, passed down Board → Column → TaskCard as one object.
   const cardActions = { open: openEdit, move: handleMove, handOff: handleHandOff };
 
@@ -86,12 +134,21 @@ function Tracker() {
             Vibecoding Project Tracker
           </h1>
           <p className="text-sm text-text-muted">
-            Archie · Track the task <em>and</em> the prompt that built it.
+            Track the task <em>and</em> the prompt that built it.
           </p>
         </div>
-        <button id="new-task-button" type="button" className={btnPrimary} onClick={openCreate}>
-          + New task
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-text-muted">
+            Signed in as <span className="font-medium text-text-primary">{user.name}</span>
+          </p>
+          <button type="button" className={btnSecondary} onClick={handleLogout}>
+            <LogOut aria-hidden="true" className="h-4 w-4" />
+            Log out
+          </button>
+          <button id="new-task-button" type="button" className={btnPrimary} onClick={openCreate}>
+            + New task
+          </button>
+        </div>
       </header>
 
       {/* M11: pinned deliverables, always visible above the board (FR-18, FR-19). */}
