@@ -21,7 +21,13 @@ Anti-references — what we are explicitly **not** trying to look like:
 - Neon "gamer" dark themes: pure black backgrounds with saturated glowing colours. They cause halation (bright text appears to bleed) and eye strain, and they make status colours shout.
 - Trello's default bright blue: busy, and it doesn't feel like a developer tool.
 
-**Why dark (accessibility justification):** the target users are developers who already spend long sessions in dark editors, so a dark tracker avoids the glare of switching between light and dark windows. To keep it accessible, we avoid pure black (`#000`) and pure white (`#FFF`). Very high contrast on dark backgrounds causes halation for users with astigmatism, so we use a dark slate background with off-white text instead. That still gives a contrast ratio of about 15:1, far above the AA minimum of 4.5:1.
+**Why dark, and how its drawbacks are handled:** dark was chosen because it is the developer's preference and matches the dark IDE and terminal setups that the target users (developers) commonly work in. Research generally finds that dark text on a light background gives slightly better reading performance (Piepenbrock et al., 2013), so the theme follows published dark-theme guidance to reduce that cost:
+- a dark grey background rather than pure black
+- off-white rather than pure white text
+- desaturated accent colours
+- lighter surfaces for raised elements such as the modal (Google Material Design, "Dark theme").
+
+Every text colour still meets WCAG 2.2 AA contrast (see §2). A light theme is noted as future work.
 
 ## 2. Color palette
 
