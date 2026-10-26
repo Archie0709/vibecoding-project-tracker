@@ -170,7 +170,7 @@ Fill in:
 
 - **Team name:** Archie (Archie0709) — solo entry, no separate team name
 - **Tagline (one sentence):** Track the task *and* the prompt that built it.
-- **Tracker URL after deploy:** `<TODO>` — required for assessment marking (NFR-15); hosting approach decided before M12 (see §6).
+- **Tracker URL after deploy:** <https://vibetracker-8j5a.onrender.com> — click **Try the demo** on the login page (no registration needed). Free hosting sleeps when idle, so the first load can take about a minute.
 
 ## 12. Out of scope (do not build)
 
@@ -285,7 +285,7 @@ Other M12 "secret sauce" ideas (e.g. collapsible columns, search) are added only
 
 How each requirement is met in the prototype, so features can be traced back to requirements. "Where" names the part of the app a marker can look at.
 
-**Key:** ✅ implemented · 🔶 implemented, still to be verified · ⏳ planned before submission · ❌ not implemented (future work)
+**Key:** ✅ implemented · 🔶 implemented, still to be verified · ❌ not implemented (future work)
 
 ### Functional
 
@@ -308,7 +308,7 @@ How each requirement is met in the prototype, so features can be traced back to 
 | FR-24 | ✅ | Board switcher with New / Rename / Delete |
 | FR-25, FR-26 | ✅ | Members panel; assignee lists show board members only |
 | FR-27 | ✅ | Each board has its own deliverables |
-| FR-28 | 🔶 | "Try the demo" on the login page; live once the hosted version is deployed |
+| FR-28 | ✅ | "Try the demo" on the login page of https://vibetracker-8j5a.onrender.com |
 | FR-29 | ✅ | Drag cards between columns |
 
 ### Non-functional
@@ -324,7 +324,7 @@ How each requirement is met in the prototype, so features can be traced back to 
 | NFR-11 | 🔶 | Not yet measured with 100 tasks |
 | NFR-12 | 🔶 | Tested in Chromium-based browsers (Chrome / Edge); check Firefox |
 | NFR-13, NFR-14 | ✅ | BCrypt hashes; every API route except login/register/health checks the session and board membership |
-| NFR-15 | ⏳ | Deployment files ready (`Dockerfile`, `render.yaml`); deploy to Render + Aiven and record the link in §11 |
+| NFR-15 | ✅ | Hosted at https://vibetracker-8j5a.onrender.com (Render + Aiven MySQL); first load after idle takes about a minute |
 | NFR-16 | ✅ | Script tags and `javascript:` links tested and not run |
 | NFR-17, NFR-18 | ✅ | Runs on the university laptop with local MariaDB; one instance per team |
 | NFR-19 | ✅ | All data access in `src/api.js` (the UI didn't change when storage moved to the server) |

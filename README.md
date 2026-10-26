@@ -4,6 +4,8 @@
 
 A Kanban-style tracker for teams who build software with AI tools. Every task keeps the AI context that produced it (prompt, conversation, bug log) and can be copied back into Claude, ChatGPT or Cursor in one click. Built by Archie (Archie0709) for the UXD Vibecoding Hackathon 2026, starting from the template by Prof. Dr. Ignacio Alvarez.
 
+**Live demo: <https://vibetracker-8j5a.onrender.com>.** Click **Try the demo**; no account is needed. The free server sleeps when idle, so the first visit can take about a minute to load.
+
 - **Requirements:** [`PRD.md`](PRD.md). Functional, non-functional and data requirements are in §14–16, and implementation status in §17.
 - **Design system:** [`DESIGN.md`](DESIGN.md), covering colours with contrast checks, type, components and microcopy.
 
