@@ -91,6 +91,19 @@ export function logout() {
   return request('/auth/logout', { method: 'POST' });
 }
 
+/** Showcase demo (FR-28): is it switched on, and log in as the demo account. */
+export async function getDemoInfo() {
+  try {
+    return await request('/auth/demo');
+  } catch {
+    return { enabled: false };
+  }
+}
+
+export function demoLogin() {
+  return request('/auth/demo', { method: 'POST' });
+}
+
 // ---- Boards (12d) ----------------------------------------------------------
 
 export function listBoards() {

@@ -92,6 +92,11 @@ public class AuthService {
         return user;
     }
 
+    @Transactional(readOnly = true)
+    public Optional<User> findByEmail(String email) {
+        return users.findByEmailIgnoreCase(normaliseEmail(email));
+    }
+
     /** Creates a new session for the user and returns its token. */
     @Transactional
     public String startSession(User user) {

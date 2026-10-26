@@ -98,14 +98,14 @@ Anchor: + boardId — each board has its own four deliverable slots.
 | Styling | Tailwind | Already configured. Use utility classes; no separate CSS files. |
 | State | React `useState` + small custom hooks | Simple, no library needed. |
 | Persistence | localStorage (M4–M11) → **[Amended]** MariaDB via the REST API (M12) | localStorage kept the core milestones fast; the database makes boards shared between users. |
-| Deploy | **[Amended]** Local for development and the hackathon demo; hosted link required before submission (NFR-15) | Vercel cannot host the Java backend. |
+| Deploy | **[Amended]** Local for development; hosted as one Docker service on Render (free) with an Aiven MySQL database | Vercel cannot host the Java backend; one service keeps the app and API on the same site, so the login cookie works. |
 | Icons | `lucide-react` | Consistent, accessible SVG icons (DESIGN.md §7). |
 | **[Amended] Backend (M12)** | Java 21 · Spring Boot 3.5 · Maven · Spring Data JPA | The developer's strongest language; typed, well-documented, fast to scaffold with AI. |
 | **[Amended] Database (M12)** | MariaDB (local install, managed via IntelliJ) | Already available on the dev laptop; no Docker needed. |
 | **[Amended] Auth (M12)** | Email + password, BCrypt-hashed (Spring Security's built-in encoder), server-side session in an HttpOnly cookie | Client Q&A: "login would be ideal" so the tool isn't left exposed. |
 | **[Amended] Markdown (M12)** | `react-markdown` + `remark-gfm` (no raw HTML) | Safe-by-default rendering of task fields; GitHub-style tables and checklists. |
 
-> **Decision [Amended]:** M4–M11 are built exactly as specified, on localStorage, so each milestone ships quickly and independently. All data access goes through a single `src/api.js` layer from M4. In M12 that layer is switched from localStorage to the Spring Boot REST API, so the UI is not rewritten mid-hackathon. Development and the hackathon demo run locally (frontend on Vite, backend on Spring Boot, database on local MariaDB). **However, the module assessment requires a link that the marker can open without registering (see NFR-15 and FR-28)**, so a hosted version with demo access is still to be set up before submission. Vercel can host the frontend but not the Java backend.
+> **Decision [Amended]:** M4–M11 are built exactly as specified, on localStorage, so each milestone ships quickly and independently. All data access goes through a single `src/api.js` layer from M4. In M12 that layer is switched from localStorage to the Spring Boot REST API, so the UI is not rewritten mid-hackathon. Development and the hackathon demo run locally (frontend on Vite, backend on Spring Boot, database on local MariaDB). **However, the module assessment requires a link that the marker can open without registering (see NFR-15 and FR-28)**, so the app is hosted on Render with a free Aiven MySQL database (see README → Hosting), with a "Try the demo" login and sample data (FR-20, FR-28). Vercel can host the frontend but not the Java backend.
 
 ## 7. Stage names
 
@@ -278,7 +278,7 @@ Other M12 "secret sauce" ideas (e.g. collapsible columns, search) are added only
 | DR-09 | Board membership | `boardId`, `userId`, `addedAt` (unique per board and user) | A board member adds a registered user | MariaDB `board_member` table | Non-MVP |
 | DR-10 | Session | `token` (random 256-bit, unguessable), `userId`, `createdAt`, `expiresAt` (7 days) | Issued by the server at login; sent to the browser only in an HttpOnly cookie | MariaDB `user_session` table | Non-MVP |
 | DR-11 | Board ownership of data | `boardId` on Task and Anchor | Set by the system from the current board | MariaDB foreign keys | Non-MVP |
-| DR-12 | Demo dataset | At least one demo board containing tasks in every column and due state, of both types, with context filled in, plus filled anchor links (and a demo user account from M12) | Written by the developer as seed data | Seed script / seed module | MVP |
+| DR-12 | Demo dataset | A demo account, three demo teammates and two demo boards: tasks in every column and due state, of both types, with Markdown and AI context, plus filled anchor links | Written by the developer as seed data (`DemoDataSeeder`), rebuilt on every start-up when the demo is switched on | MariaDB / MySQL (same tables) | MVP |
 
 
 ## 17. Implementation status (traceability)
@@ -302,13 +302,13 @@ How each requirement is met in the prototype, so features can be traced back to 
 | FR-14, FR-15, FR-16 | ✅ | "AI context" section in the task modal; time set by the server |
 | FR-17 | ✅ | "Copy" on each card and "Copy as prompt" in the modal |
 | FR-18, FR-19 | ✅ | Deliverables bar above the board |
-| FR-20 | ✅ | Demo data entered by the developer |
+| FR-20 | ✅ | The developer's own data locally; demo boards seeded automatically when `app.demo.enabled=true` (hosted) |
 | FR-21 | ✅ | Write / Split / Preview Markdown editor |
 | FR-22, FR-23 | ✅ | Log in / Create account screens; Log out in the header |
 | FR-24 | ✅ | Board switcher with New / Rename / Delete |
 | FR-25, FR-26 | ✅ | Members panel; assignee lists show board members only |
 | FR-27 | ✅ | Each board has its own deliverables |
-| FR-28 | ⏳ | Needs a hosted version with a demo login (see NFR-15) |
+| FR-28 | 🔶 | "Try the demo" on the login page; live once the hosted version is deployed |
 | FR-29 | ✅ | Drag cards between columns |
 
 ### Non-functional
@@ -324,7 +324,7 @@ How each requirement is met in the prototype, so features can be traced back to 
 | NFR-11 | 🔶 | Not yet measured with 100 tasks |
 | NFR-12 | 🔶 | Tested in Chromium-based browsers (Chrome / Edge); check Firefox |
 | NFR-13, NFR-14 | ✅ | BCrypt hashes; every API route except login/register/health checks the session and board membership |
-| NFR-15 | ⏳ | Hosting to be set up before submission |
+| NFR-15 | ⏳ | Deployment files ready (`Dockerfile`, `render.yaml`); deploy to Render + Aiven and record the link in §11 |
 | NFR-16 | ✅ | Script tags and `javascript:` links tested and not run |
 | NFR-17, NFR-18 | ✅ | Runs on the university laptop with local MariaDB; one instance per team |
 | NFR-19 | ✅ | All data access in `src/api.js` (the UI didn't change when storage moved to the server) |

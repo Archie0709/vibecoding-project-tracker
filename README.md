@@ -34,7 +34,8 @@ A Kanban-style tracker for teams who build software with AI tools. Every task ke
 |---|---|
 | Frontend | React 18, Vite 5, Tailwind CSS 3, `lucide-react` icons, `react-markdown` + `remark-gfm` |
 | Backend | Java 21, Spring Boot 3.5 (Web, Data JPA, Validation), Spring Security Crypto (BCrypt) |
-| Database | MariaDB (10.6+ / 11.x) |
+| Database | MariaDB (10.6+ / 11.x) locally; MySQL 8 (Aiven) when hosted |
+| Hosting | Render (Docker, free plan) |
 
 In development, Vite forwards every `/api/...` request to the backend on port 8080. The browser therefore sees one site, so no CORS setup is needed and the login cookie just works.
 
@@ -84,6 +85,18 @@ npm run dev
 
 Open the URL Vite prints (usually <http://localhost:5173>). Choose **Create an account**: your first board is created for you. To try members and hand-off, register a second account in a private window, then add it to your board via **Members**.
 
+### Sample data (optional)
+
+To get a ready-made demo board instead of typing tasks in by hand, add this line to `application-local.properties` and restart the backend:
+
+```properties
+app.demo.enabled=true
+```
+
+- **What you get:** a demo account (**Alex Morgan**, `demo@example.com`, password `try-the-demo`) with three demo teammates and two boards. The tasks cover every column, type, due-date state and AI tool, with Markdown and AI context filled in.
+- **Try the demo button:** the login page shows **Try the demo**, which logs straight in without registering.
+- **Resetting:** the demo boards are rebuilt on every restart. Only boards created by the demo accounts are reset; your own boards and tasks are never touched.
+
 ### Troubleshooting
 
 | Problem | Fix |
@@ -95,11 +108,38 @@ Open the URL Vite prints (usually <http://localhost:5173>). Choose **Create an a
 
 ---
 
+## Hosting (showcase and marking)
+
+The app is hosted as **one Render web service** (free plan) that serves the built React app and the API from the same address, with a **free Aiven MySQL** database. MySQL runs the same `schema.sql` as MariaDB. Vercel isn't used because it can't run the Java backend. Splitting the frontend and backend across two sites would also stop the login cookie working, because browsers block cross-site cookies.
+
+### 1. Database: Aiven (free, no credit card)
+
+1. Sign up at [aiven.io](https://aiven.io) and create a **MySQL** service on the **Free** plan.
+2. When it's running, open its **Overview** page and note the **Host**, **Port**, **User** (`avnadmin`), **Password** and **Database** (`defaultdb`).
+
+### 2. App: Render (free)
+
+1. Push the repo to GitHub, including `Dockerfile` and `render.yaml`.
+2. Sign in at [render.com](https://render.com) with GitHub. Choose **New → Blueprint** and pick this repository. Render reads `render.yaml`.
+3. Fill in the three secret values when asked:
+   - `SPRING_DATASOURCE_URL` = `jdbc:mysql://HOST:PORT/defaultdb?sslMode=REQUIRED`
+   - `SPRING_DATASOURCE_USERNAME` = `avnadmin`
+   - `SPRING_DATASOURCE_PASSWORD` = the Aiven password
+4. Click **Apply**. The first build takes several minutes. When it says **Live**, open `https://<your-service>.onrender.com/api/health` to check the database is connected. Then open the site and click **Try the demo**.
+
+`render.yaml` also switches on the demo data (`APP_DEMO_ENABLED=true`) and secure cookies (`APP_AUTH_COOKIE_SECURE=true`, because the site is HTTPS). Every push to `main` redeploys automatically.
+
+**Before a showcase or marking:**
+- **Wake the site:** the free service sleeps after 15 minutes without visitors, and the first visit afterwards takes about a minute. Open it a minute early.
+- **Check the database:** Aiven may power off a free database that hasn't been used for a while. Check in the Aiven console that it's running.
+- **Fresh demo:** each restart puts the demo boards back to a clean state.
+
 ## Project structure
 
 ```
 .
 ├── PRD.md, DESIGN.md          requirements and design system
+├── Dockerfile, render.yaml    hosting: one container for the app + API (Render)
 ├── index.html, vite.config.js, tailwind.config.js
 ├── src/                       React frontend
 │   ├── api.js                 the ONLY place that talks to the backend (data layer)
@@ -116,6 +156,7 @@ Open the URL Vite prints (usually <http://localhost:5173>). Choose **Create an a
         │   ├── board/         boards, deliverable links, members
         │   ├── task/          tasks
         │   ├── user/          list of users
+        │   ├── demo/          showcase sample data (only when app.demo.enabled=true)
         │   ├── model/         JPA entities
         │   ├── repository/    Spring Data repositories
         │   └── common/        error handling
@@ -126,7 +167,7 @@ Open the URL Vite prints (usually <http://localhost:5173>). Choose **Create an a
 
 ## REST API
 
-Every route except register, login, logout and health requires a logged-in session. Board routes also require you to be a member of that board; otherwise they answer 404.
+Every route except register, login, logout, demo and health requires a logged-in session. Board routes also require you to be a member of that board; otherwise they answer 404.
 
 | Method & path | Purpose |
 |---|---|
@@ -136,6 +177,7 @@ Every route except register, login, logout and health requires a logged-in sessi
 | `GET/POST /api/boards/{id}/members` · `DELETE /api/boards/{id}/members/{userId}` | Members |
 | `GET /api/boards/{id}/anchors` · `PUT /api/boards/{id}/anchors/{slot}` | Deliverable links |
 | `GET/POST /api/boards/{id}/tasks` · `PUT/DELETE /api/boards/{id}/tasks/{taskId}` · `POST /api/boards/{id}/tasks/import` | Tasks |
+| `GET /api/auth/demo` · `POST /api/auth/demo` | Is the demo on? / log in as the demo account |
 | `GET /api/health` | Server and database check |
 
 ---
@@ -164,7 +206,7 @@ Built to WCAG 2.2 AA (NFR-01 – NFR-08). Details and contrast measurements are 
 ## Known limitations / future work
 
 - **Customisable due-date colours (FR-13):** the colours are already in one config file, but there's no settings screen yet.
-- **Hosted demo with no registration needed (FR-28, NFR-15):** to be set up before coursework submission.
+- **Free hosting:** the site sleeps when idle, so the first visit afterwards is slow. Demo data is shared by every visitor until the next restart.
 - **Live updates:** a teammate's changes appear after a page refresh, not live.
 - **Screen size:** desktop layout only (mobile was out of scope).
 
@@ -186,7 +228,7 @@ Built to WCAG 2.2 AA (NFR-01 – NFR-08). Details and contrast measurements are 
 | 10 | `copy-context` | Copy as prompt |
 | 11 | `project-deliverables` | Deliverables bar |
 | 12 | `secret-sauce` | Markdown, Spring Boot + MariaDB backend, accounts, multiple boards, members, drag and drop (commits 12a–12g) |
-| 13 | `pitch-ready` | README, demo data, final documentation |
+| 13 | `pitch-ready` | README, demo data, final documentation, hosting setup |
 
 ## Use of AI tools
 

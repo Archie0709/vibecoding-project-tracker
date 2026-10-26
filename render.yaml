@@ -1,0 +1,21 @@
+# Render Blueprint: New → Blueprint → pick this repo. Render reads this file.
+# Fill in the three database values in the Render dashboard (they are not stored here).
+services:
+  - type: web
+    name: vibetracker
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        sync: false   # e.g. jdbc:mysql://HOST:PORT/defaultdb?sslMode=REQUIRED
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false   # e.g. avnadmin
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: APP_DEMO_ENABLED
+        value: "true"
+      - key: APP_AUTH_COOKIE_SECURE
+        value: "true"   # the hosted site is HTTPS

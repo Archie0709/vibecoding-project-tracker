@@ -22,6 +22,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/auth/register",
                         "/api/auth/login",
                         "/api/auth/logout",
+                        "/api/auth/demo",
                         "/api/health");
     }
 }

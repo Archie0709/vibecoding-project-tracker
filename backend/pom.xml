@@ -47,6 +47,14 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- MySQL JDBC driver, for hosting on a managed MySQL service (e.g. Aiven's free tier).
+             Spring picks the driver from the URL: jdbc:mariadb://… locally, jdbc:mysql://… when hosted. -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Spring's built-in password encoders (BCrypt) — used from 12c. Crypto module only,
              not the full Spring Security filter chain. -->
         <dependency>

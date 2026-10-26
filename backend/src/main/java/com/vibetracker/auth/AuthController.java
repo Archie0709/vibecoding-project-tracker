@@ -1,5 +1,8 @@
 package com.vibetracker.auth;
 
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.vibetracker.auth.AuthDtos.LoginRequest;
 import com.vibetracker.auth.AuthDtos.RegisterRequest;
 import com.vibetracker.auth.AuthDtos.UserResponse;
+import com.vibetracker.common.ApiException;
+import com.vibetracker.demo.DemoDataSeeder;
 import com.vibetracker.model.User;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +28,8 @@ import jakarta.validation.Valid;
  * POST /api/auth/login     — log in
  * POST /api/auth/logout    — log out (ends the server-side session)
  * GET  /api/auth/me        — who am I? (401 if not logged in)
+ * GET  /api/auth/demo      — is the showcase demo switched on?
+ * POST /api/auth/demo      — log in as the demo account, no registration needed (FR-28)
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -30,10 +37,14 @@ public class AuthController {
 
     private final AuthService authService;
     private final SessionCookie sessionCookie;
+    private final boolean demoEnabled;
 
-    public AuthController(AuthService authService, SessionCookie sessionCookie) {
+    public AuthController(AuthService authService,
+                          SessionCookie sessionCookie,
+                          @Value("${app.demo.enabled:false}") boolean demoEnabled) {
         this.authService = authService;
         this.sessionCookie = sessionCookie;
+        this.demoEnabled = demoEnabled;
     }
 
     @PostMapping("/register")
@@ -60,6 +71,22 @@ public class AuthController {
 
     @GetMapping("/me")
     public UserResponse me(@RequestAttribute(AuthInterceptor.CURRENT_USER) User user) {
+        return UserResponse.from(user);
+    }
+
+    @GetMapping("/demo")
+    public Map<String, Object> demoInfo() {
+        return Map.of("enabled", demoEnabled);
+    }
+
+    @PostMapping("/demo")
+    public UserResponse demoLogin(HttpServletResponse response) {
+        if (!demoEnabled) {
+            throw ApiException.notFound("The demo isn't available on this server.");
+        }
+        User user = authService.findByEmail(DemoDataSeeder.DEMO_EMAIL)
+                .orElseThrow(() -> ApiException.notFound("The demo account hasn't been created yet. Try again in a moment."));
+        logIn(user, response);
         return UserResponse.from(user);
     }
 

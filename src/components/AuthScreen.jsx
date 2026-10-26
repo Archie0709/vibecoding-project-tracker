@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { CircleAlert, Eye, EyeOff } from 'lucide-react';
+import { CircleAlert, Eye, EyeOff, Sparkles } from 'lucide-react';
+import * as api from '../api';
 import { useAuth } from '../hooks/useAuth';
-import { btnPrimary, focusRing, inputClass, labelClass } from '../lib/ui';
+import { btnPrimary, btnSecondary, focusRing, inputClass, labelClass } from '../lib/ui';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const GITHUB_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
@@ -36,6 +37,8 @@ export default function AuthScreen() {
           Vibecoding Project Tracker
         </p>
 
+        <DemoPanel />
+
         <div className="rounded-lg bg-surface-card p-6 ring-1 ring-border-subtle">
           <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold focus:outline-none">
             {isLogin ? 'Log in' : 'Create an account'}
@@ -61,6 +64,57 @@ export default function AuthScreen() {
         </p>
       </div>
     </main>
+  );
+}
+
+/**
+ * Showcase (FR-28): one click into a sample board, so visitors and markers don't have to
+ * register. Only shown when the server has the demo switched on.
+ */
+function DemoPanel() {
+  const { loginAsDemo } = useAuth();
+  const [enabled, setEnabled] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    api.getDemoInfo().then((info) => !cancelled && setEnabled(Boolean(info?.enabled)));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!enabled) return null;
+
+  async function handleClick() {
+    setBusy(true);
+    setError('');
+    try {
+      await loginAsDemo();
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section
+      aria-labelledby="demo-heading"
+      className="mb-4 rounded-lg border border-brand-primary/50 bg-brand-primary/5 p-4"
+    >
+      <h2 id="demo-heading" className="flex items-center gap-2 text-sm font-semibold">
+        <Sparkles aria-hidden="true" className="h-4 w-4 text-brand-primary" />
+        Just looking?
+      </h2>
+      <p className="mt-1 text-sm text-text-muted">
+        Explore a sample team board with example tasks. No account needed. The demo resets regularly.
+      </p>
+      <button type="button" onClick={handleClick} disabled={busy} className={`${btnSecondary} mt-3 w-full`}>
+        {busy ? 'Opening the demo…' : 'Try the demo'}
+      </button>
+      {error && <p role="alert" className="mt-2 text-sm text-due-overdue">{error}</p>}
+    </section>
   );
 }
 
