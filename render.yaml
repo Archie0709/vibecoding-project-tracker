@@ -5,6 +5,7 @@ services:
     name: vibetracker
     runtime: docker
     plan: free
+    region: frankfurt   # closest Render region to the Aiven database (Amsterdam)
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
     autoDeploy: true
